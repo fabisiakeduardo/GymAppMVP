@@ -6,7 +6,7 @@ import {
   type Database,
   type User,
 } from "@gymapp/db";
-import { RegisterInput, LoginInput, RefreshInput } from "@gymapp/shared";
+import { RegisterInput, LoginInput, RefreshInput, UpdateMeInput } from "@gymapp/shared";
 import { authService } from "../plugins/auth";
 import { hashPassword, verifyPassword } from "../lib/password";
 import {
@@ -168,5 +168,19 @@ export function authRoutes(db: Database) {
       "/me",
       ({ authUser }) => ({ user: publicUser(authUser!) }),
       { requireAuth: true },
+    )
+
+    // Atualiza meta (cut/bulk/maintain) e nome — usado no Perfil.
+    .patch(
+      "/me",
+      async ({ authUser, body }) => {
+        const [updated] = await db
+          .update(users)
+          .set({ ...body, updatedAt: new Date() })
+          .where(eq(users.id, authUser!.id))
+          .returning();
+        return { user: publicUser(updated!) };
+      },
+      { body: UpdateMeInput, requireAuth: true },
     );
 }

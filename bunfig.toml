@@ -1,0 +1,4 @@
+# node_modules achatado (hoisted): babel/jest conseguem resolver plugins
+# transitivos (@babel/plugin-*) que o layout isolado esconderia.
+[install]
+linker = "hoisted"

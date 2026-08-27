@@ -66,6 +66,17 @@ describe("auth flow", () => {
     expect(comToken.body.user.id).toBe(user.id);
   });
 
+  it("PATCH /auth/me atualiza a meta", async () => {
+    const { accessToken } = await registerUser("meta@teste.com");
+    const patch = await req("/auth/me", {
+      method: "PATCH",
+      token: accessToken,
+      body: { goal: "cut" },
+    });
+    expect(patch.status).toBe(200);
+    expect(patch.body.user.goal).toBe("cut");
+  });
+
   it("refresh rotaciona: token antigo para de funcionar", async () => {
     const { refreshToken } = await registerUser("rot@teste.com");
     const first = await req("/auth/refresh", {

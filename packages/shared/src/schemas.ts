@@ -24,6 +24,12 @@ export const RefreshInput = t.Object({
 });
 export type RefreshInput = Static<typeof RefreshInput>;
 
+export const UpdateMeInput = t.Object({
+  name: t.Optional(t.String({ minLength: 1, maxLength: 80 })),
+  goal: t.Optional(t.Union(GOALS.map((g) => t.Literal(g)))),
+});
+export type UpdateMeInput = Static<typeof UpdateMeInput>;
+
 export const AuthTokens = t.Object({
   accessToken: t.String(),
   refreshToken: t.String(),
