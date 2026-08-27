@@ -1,0 +1,26 @@
+{
+  "name": "@gymapp/api",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint src"
+  },
+  "dependencies": {
+    "@elysiajs/cors": "^1.1.1",
+    "@elysiajs/jwt": "^1.1.1",
+    "@gymapp/db": "workspace:*",
+    "@gymapp/shared": "workspace:*",
+    "drizzle-orm": "^0.36.4",
+    "elysia": "^1.1.26",
+    "postgres": "^3.4.5"
+  },
+  "devDependencies": {
+    "oxlint": "^0.15.0",
+    "typescript": "^5.6.3"
+  }
+}

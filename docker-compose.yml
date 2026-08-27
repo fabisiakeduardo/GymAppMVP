@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gymapp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gymapp}
+      POSTGRES_DB: ${POSTGRES_DB:-gymapp}
+    ports:
+      - "5432:5432"
+    volumes:
+      - gymapp_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gymapp} -d ${POSTGRES_DB:-gymapp}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-gymapp}:${POSTGRES_PASSWORD:-gymapp}@postgres:5432/${POSTGRES_DB:-gymapp}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-troque-em-producao-32-chars-min}
+      PORT: 3333
+      NODE_ENV: development
+      CORS_ORIGINS: http://localhost:8081,http://localhost:19006
+    ports:
+      - "3333:3333"
+    # Hot reload: monta o codigo local dentro do container.
+    volumes:
+      - ./apps/api:/app/apps/api
+      - ./packages:/app/packages
+      - /app/node_modules
+
+volumes:
+  gymapp_pgdata:

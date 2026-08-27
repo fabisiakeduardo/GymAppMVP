@@ -1,0 +1,30 @@
+{
+  "name": "gymapp-mvp",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "bun run --cwd apps/api dev",
+    "dev:mobile": "bun run --cwd apps/mobile start",
+    "db:generate": "bun run --cwd packages/db generate",
+    "db:migrate": "bun run --cwd packages/db migrate",
+    "db:seed": "bun run --cwd packages/db seed",
+    "lint": "bun run --cwd apps/api lint && bun run --cwd packages/shared lint",
+    "typecheck": "bun run --cwd packages/shared typecheck && bun run --cwd packages/db typecheck && bun run --cwd apps/api typecheck && bun run --cwd apps/mobile typecheck",
+    "test": "bun run --cwd apps/api test"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.0",
+    "typescript": "^5.6.3"
+  },
+  "overrides": {
+    "@sinclair/typebox": "0.34.52"
+  },
+  "engines": {
+    "bun": ">=1.1.0"
+  }
+}
