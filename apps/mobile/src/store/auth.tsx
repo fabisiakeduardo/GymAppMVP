@@ -7,7 +7,13 @@ import type { Goal } from "@gymapp/shared/constants";
 interface AuthState {
   user: User | null;
   loading: boolean;
-  register: (input: { email: string; password: string; name: string; goal?: Goal }) => Promise<void>;
+  register: (input: {
+    email: string;
+    username: string;
+    password: string;
+    name: string;
+    goal?: Goal;
+  }) => Promise<void>;
   login: (input: { email: string; password: string }) => Promise<void>;
   logout: () => Promise<void>;
   refreshMe: () => Promise<void>;
@@ -44,7 +50,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const register = useCallback(
-    async (input: { email: string; password: string; name: string; goal?: Goal }) => {
+    async (input: {
+      email: string;
+      username: string;
+      password: string;
+      name: string;
+      goal?: Goal;
+    }) => {
       const res = await apiFetch<AuthResponse>("/auth/register", {
         method: "POST",
         body: input,

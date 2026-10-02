@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "./client";
 import type {
@@ -24,12 +25,50 @@ import type {
 } from "./types";
 import type { Goal } from "@gymapp/shared/constants";
 
+// --- Auth extra ---
+
+// Check de @ livre — so consulta quando o formato e valido.
+export function useUsernameAvailable(username: string, enabled = true) {
+  return useQuery({
+    queryKey: ["auth", "username-available", username],
+    queryFn: () =>
+      apiFetch<{ available: boolean }>(
+        `/auth/username-available?u=${encodeURIComponent(username)}`,
+      ),
+    enabled: enabled && /^[a-zA-Z0-9_.]{3,30}$/.test(username),
+    staleTime: 30_000,
+    retry: false,
+  });
+}
+
+// Valor "atrasado" pra nao disparar request a cada tecla.
+export function useDebounced<T>(value: T, ms = 450): T {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setV(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return v;
+}
+
+// Troca de senha — resposta traz tokens novos (sessoes antigas morrem).
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (body: { currentPassword: string; newPassword: string }) =>
+      apiFetch<{ accessToken: string; refreshToken: string; expiresIn: number }>(
+        "/auth/change-password",
+        { method: "POST", body },
+      ),
+  });
+}
+
 // --- Perfil / conta ---
 export function useUpdateMe() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: {
       name?: string;
+      username?: string;
       goal?: Goal;
       heightCm?: number | null;
       birthDate?: string | null;

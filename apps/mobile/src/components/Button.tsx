@@ -1,6 +1,7 @@
 import React from "react";
-import { Pressable, Text, ActivityIndicator, View } from "react-native";
+import { Text, ActivityIndicator, View } from "react-native";
 import * as Haptics from "expo-haptics";
+import { PressableScale } from "./anim";
 import { colors } from "../theme/colors";
 
 type Variant = "primary" | "ghost" | "danger";
@@ -39,25 +40,26 @@ export function Button({
     danger: "text-blood",
   };
 
+  const press = () => {
+    if (isDisabled) return;
+    // Feedback tatil: acao primaria "estala" na mao.
+    Haptics.impactAsync(
+      variant === "primary"
+        ? Haptics.ImpactFeedbackStyle.Medium
+        : Haptics.ImpactFeedbackStyle.Light,
+    ).catch(() => {});
+    onPress();
+  };
+
   return (
-    <Pressable
-      onPress={() => {
-        if (isDisabled) return;
-        // Feedback tatil: acao primaria "estala" na mao.
-        Haptics.impactAsync(
-          variant === "primary"
-            ? Haptics.ImpactFeedbackStyle.Medium
-            : Haptics.ImpactFeedbackStyle.Light,
-        ).catch(() => {});
-        onPress();
-      }}
+    <PressableScale
+      onPress={press}
       disabled={isDisabled}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
-      // touch target >= 44px garantido pelo padding
-      className={`${base} ${byVariant[variant]} ${isDisabled ? "opacity-50" : ""} min-h-[52px] items-center justify-center flex-row`}
+      className={`self-stretch px-5 ${large ? "py-4.5 rounded-2xl" : "py-3.5 rounded-xl"} ${byVariant[variant]} items-center justify-center ${isDisabled ? "opacity-50" : ""} min-h-[52px] flex-row`}
     >
       {loading ? (
         <ActivityIndicator color={variant === "primary" ? colors.voltOn : colors.chalk} />
@@ -68,7 +70,7 @@ export function Button({
           {label}
         </Text>
       )}
-    </Pressable>
+    </PressableScale>
   );
 }
 

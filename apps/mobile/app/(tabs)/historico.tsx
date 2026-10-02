@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Screen } from "../../src/components/Screen";
 import { Button } from "../../src/components/Button";
 import { EmptyState, Pill, SkeletonRows } from "../../src/components/ui";
+import { FadeInView, staggerDelay } from "../../src/components/anim";
 import { useProfileStats, useWorkoutHistory } from "../../src/api/hooks";
 import { useAuth } from "../../src/store/auth";
 import { colors } from "../../src/theme/colors";
@@ -88,7 +89,9 @@ export default function Historico() {
               {g.label}
             </Text>
             {g.items.map((w, i) => (
-              <WorkoutRow key={w.id} workout={w} last={i === g.items.length - 1} />
+              <FadeInView key={w.id} delay={staggerDelay(i)}>
+                <WorkoutRow workout={w} last={i === g.items.length - 1} />
+              </FadeInView>
             ))}
           </View>
         ))

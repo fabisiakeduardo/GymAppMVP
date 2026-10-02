@@ -33,8 +33,12 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: text("email").notNull(),
+  // @username publico: minusculo, [a-z0-9_.], unico. E como acham a pessoa.
+  username: text("username").notNull(),
   passwordHash: text("password_hash").notNull(),
   name: text("name").notNull(),
+  // Confirmacao de email: fluxo de codigo/link ainda nao implementado.
+  emailVerified: boolean("email_verified").notNull().default(false),
   goal: goalEnum("goal").notNull().default("maintain"),
   heightCm: doublePrecision("height_cm"),
   birthDate: date("birth_date"),
@@ -53,6 +57,7 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
   emailIdx: uniqueIndex("users_email_unique").on(sql`lower(${table.email})`),
+  usernameIdx: uniqueIndex("users_username_unique").on(sql`lower(${table.username})`),
 }));
 
 // ---------------------------------------------------------------------------

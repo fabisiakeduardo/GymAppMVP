@@ -14,6 +14,7 @@ import { Button } from "../../src/components/Button";
 import { Avatar } from "../../src/components/Avatar";
 import { PostCard } from "../../src/components/PostCard";
 import { EmptyState, SkeletonRows } from "../../src/components/ui";
+import { FadeInView, staggerDelay } from "../../src/components/anim";
 import { useAuth } from "../../src/store/auth";
 import {
   useDiscover,
@@ -59,7 +60,7 @@ export default function Explorar() {
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder="Buscar pessoas"
+          placeholder="Buscar por nome ou @usuario"
           placeholderTextColor={colors.chalkFaint}
           autoCapitalize="none"
           accessibilityLabel="Buscar pessoas"
@@ -106,7 +107,11 @@ function DiscoverFeed() {
     <FlatList
       data={data?.posts ?? []}
       keyExtractor={(p: Post) => p.id}
-      renderItem={({ item }) => <PostCard post={item} />}
+      renderItem={({ item, index }) => (
+        <FadeInView delay={staggerDelay(index)}>
+          <PostCard post={item} />
+        </FadeInView>
+      )}
       ListHeaderComponent={
         (data?.suggested?.length ?? 0) > 0 ? (
           <View className="mb-3">
@@ -145,7 +150,13 @@ function DiscoverFeed() {
 function SuggestedUsers({
   users,
 }: {
-  users: Array<{ id: string; name: string; avatarUrl: string | null; followersCount: number }>;
+  users: Array<{
+    id: string;
+    name: string;
+    username: string;
+    avatarUrl: string | null;
+    followersCount: number;
+  }>;
 }) {
   return (
     <View>
@@ -166,6 +177,9 @@ function SuggestedUsers({
             <Avatar uri={item.avatarUrl} name={item.name} size={44} />
             <Text className="text-chalk text-sm font-bold mt-2" numberOfLines={1}>
               {item.name}
+            </Text>
+            <Text className="text-chalk-faint text-[11px]" numberOfLines={1}>
+              @{item.username}
             </Text>
             <Text className="text-chalk-faint text-[11px] mt-0.5">
               {item.followersCount} seguidores
@@ -200,7 +214,11 @@ function SearchResults({ query }: { query: string }) {
       keyExtractor={(u) => u.id}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
-      renderItem={({ item }) => <SearchRow user={item} follow={follow} unfollow={unfollow} />}
+      renderItem={({ item, index }) => (
+        <FadeInView delay={staggerDelay(index)}>
+          <SearchRow user={item} follow={follow} unfollow={unfollow} />
+        </FadeInView>
+      )}
     />
   );
 }
@@ -233,8 +251,8 @@ function SearchRow({
               <Ionicons name="lock-closed" size={11} color={colors.chalkFaint} />
             ) : null}
           </View>
-          <Text className="text-chalk-faint text-xs mt-0.5">
-            {user.followersCount} seguidores
+          <Text className="text-chalk-faint text-xs mt-0.5" numberOfLines={1}>
+            @{user.username} · {user.followersCount} seguidores
           </Text>
         </View>
       </Pressable>

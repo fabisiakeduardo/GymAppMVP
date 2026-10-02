@@ -5,8 +5,14 @@ import { GOALS, MUSCLE_GROUPS, EQUIPMENT } from "./constants";
 // Auth
 // ---------------------------------------------------------------------------
 
+// Pattern do @: letras/numeros/underline/ponto, 3-30 chars. A API normaliza
+// pra minusculo — maiusculas entram no input mas nunca persistem.
+export const USERNAME_PATTERN = "^[a-zA-Z0-9_.]{3,30}$";
+const UsernameField = t.String({ pattern: USERNAME_PATTERN });
+
 export const RegisterInput = t.Object({
   email: t.String({ format: "email", maxLength: 254 }),
+  username: UsernameField,
   password: t.String({ minLength: 8, maxLength: 128 }),
   name: t.String({ minLength: 1, maxLength: 80 }),
   goal: t.Optional(t.Union(GOALS.map((g) => t.Literal(g)))),
@@ -24,8 +30,22 @@ export const RefreshInput = t.Object({
 });
 export type RefreshInput = Static<typeof RefreshInput>;
 
+// Check publico de @ disponivel (tela de registro pergunta enquanto digita).
+export const UsernameAvailableQuery = t.Object({
+  u: t.String({ minLength: 1, maxLength: 30 }),
+});
+export type UsernameAvailableQuery = Static<typeof UsernameAvailableQuery>;
+
+// Troca de senha: exige a atual e revoga sessoes antigas no servidor.
+export const ChangePasswordInput = t.Object({
+  currentPassword: t.String({ minLength: 1, maxLength: 128 }),
+  newPassword: t.String({ minLength: 8, maxLength: 128 }),
+});
+export type ChangePasswordInput = Static<typeof ChangePasswordInput>;
+
 export const UpdateMeInput = t.Object({
   name: t.Optional(t.String({ minLength: 1, maxLength: 80 })),
+  username: t.Optional(UsernameField),
   goal: t.Optional(t.Union(GOALS.map((g) => t.Literal(g)))),
   // Altura em cm e nascimento (YYYY-MM-DD) — null limpa o campo.
   heightCm: t.Optional(t.Union([t.Number({ minimum: 50, maximum: 300 }), t.Null()])),
@@ -149,6 +169,7 @@ export type UpdateBodyMetricInput = Static<typeof UpdateBodyMetricInput>;
 export const SocialUser = t.Object({
   id: t.String(),
   name: t.String(),
+  username: t.String(),
   avatarUrl: t.Union([t.String(), t.Null()]),
   bio: t.Union([t.String(), t.Null()]),
   isPrivate: t.Boolean(),

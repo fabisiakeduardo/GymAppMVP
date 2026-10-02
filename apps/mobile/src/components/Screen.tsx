@@ -23,7 +23,7 @@ export function Screen({ children, scroll = true, title, subtitle }: ScreenProps
       {scroll ? (
         <ScrollView
           className="flex-1"
-          contentContainerClassName="px-5 pt-3 pb-10"
+          contentContainerClassName="px-5 pt-3 pb-32"
           keyboardShouldPersistTaps="handled"
         >
           {header}

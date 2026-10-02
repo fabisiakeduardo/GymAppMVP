@@ -6,6 +6,7 @@ import { Screen } from "../../src/components/Screen";
 import { Button } from "../../src/components/Button";
 import { ActionSheet } from "../../src/components/ActionSheet";
 import { EmptyState, SkeletonRows } from "../../src/components/ui";
+import { FadeInView, PressableScale, staggerDelay } from "../../src/components/anim";
 import { useRoutines, useDeleteRoutine } from "../../src/api/hooks";
 import { useLiveWorkout } from "../../src/store/liveWorkout";
 import { workoutProgress } from "../../src/live/model";
@@ -60,7 +61,9 @@ export default function Treinar() {
         {isLoading ? <SkeletonRows count={3} /> : null}
         {routines && routines.length > 0
           ? routines.map((r, i) => (
-              <RoutineRow key={r.id} routine={r} last={i === routines.length - 1} onStart={() => startFrom(r)} onLongPress={() => routineActions(r)} />
+              <FadeInView key={r.id} delay={staggerDelay(i)}>
+                <RoutineRow routine={r} last={i === routines.length - 1} onStart={() => startFrom(r)} onLongPress={() => routineActions(r)} />
+              </FadeInView>
             ))
           : null}
 
@@ -172,7 +175,7 @@ function RoutineRow({
   onLongPress: () => void;
 }) {
   return (
-    <Pressable
+    <PressableScale
       onPress={onStart}
       onLongPress={onLongPress}
       delayLongPress={350}
@@ -193,6 +196,6 @@ function RoutineRow({
       <View className="w-10 h-10 rounded-full bg-ink-850 border border-ink-800 items-center justify-center">
         <Ionicons name="play" size={16} color={colors.chalkMuted} />
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }

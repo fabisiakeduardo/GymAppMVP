@@ -1,20 +1,13 @@
-import React, { useState } from "react";
+import React from "react";
 import { View, Text, Pressable } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Screen } from "../../src/components/Screen";
 import { Button } from "../../src/components/Button";
 import { Avatar } from "../../src/components/Avatar";
-import { EmptyState, SectionTitle } from "../../src/components/ui";
+import { EmptyState } from "../../src/components/ui";
 import { useAuth } from "../../src/store/auth";
-import {
-  useBodyMetrics,
-  useProfileStats,
-  useUpdateMe,
-  useFollowRequests,
-  useSocialProfile,
-} from "../../src/api/hooks";
-import { GOALS, GOAL_LABELS, type Goal } from "@gymapp/shared/constants";
+import { useProfileStats, useSocialProfile } from "../../src/api/hooks";
 import { colors } from "../../src/theme/colors";
 
 // Formata volume grande: 12345 kg -> "12,3t".
@@ -23,8 +16,10 @@ function fmtVolume(kg: number): string {
   return `${Math.round(kg)} kg`;
 }
 
+// Perfil proprio — estilo Instagram: identidade, contagens, acao de editar
+// e numeros do atleta. Ajustes e privacidade moram em Configuracoes (engrenagem).
 export default function Perfil() {
-  const { user, logout, refreshMe } = useAuth();
+  const { user } = useAuth();
 
   if (!user) {
     return (
@@ -53,15 +48,17 @@ export default function Perfil() {
             {user.name}
           </Text>
           <Text className="text-chalk-faint text-sm mt-0.5" numberOfLines={1}>
-            {user.email}
+            @{user.username}
           </Text>
         </View>
         <Pressable
-          onPress={() => router.push("/profile/edit")}
-          accessibilityLabel="Editar perfil"
-          className="w-11 h-11 items-center justify-center rounded-xl bg-ink-900 border border-ink-800 active:bg-ink-850"
+          onPress={() => router.push("/profile/settings")}
+          accessibilityLabel="Configurações"
+          // overflow-hidden corta o fundo do press nos cantos arredondados.
+          style={{ borderRadius: 12 }}
+          className="w-11 h-11 items-center justify-center overflow-hidden bg-ink-900 border border-ink-800 active:bg-ink-850"
         >
-          <Ionicons name="create-outline" size={18} color={colors.chalkMuted} />
+          <Ionicons name="settings-outline" size={20} color={colors.chalkMuted} />
         </Pressable>
       </View>
 
@@ -71,23 +68,15 @@ export default function Perfil() {
 
       <SocialCounts userId={user.id} />
 
-      <StatsRow />
-
-      <SectionTitle>Seu corpo</SectionTitle>
-      <BodyLinks />
-
-      <SectionTitle>Social</SectionTitle>
-      <SocialPrivacy user={user} onChanged={refreshMe} />
-
-      <SectionTitle>O que aparece no seu perfil</SectionTitle>
-      <PublicProfileToggles user={user} onChanged={refreshMe} />
-
-      <SectionTitle>Sua meta</SectionTitle>
-      <GoalPicker current={user.goal} onChanged={refreshMe} />
-
-      <View className="mt-10">
-        <Button label="Sair da conta" onPress={logout} variant="danger" />
+      <View className="mb-1">
+        <Button
+          label="Editar perfil"
+          variant="ghost"
+          onPress={() => router.push("/profile/edit")}
+        />
       </View>
+
+      <StatsRow />
     </Screen>
   );
 }
@@ -121,49 +110,6 @@ function StatsRow() {
             {it.value}
           </Text>
         </View>
-      ))}
-    </View>
-  );
-}
-
-// Atalhos pras telas de corpo — mostra o ultimo peso registrado, se tiver.
-function BodyLinks() {
-  const { data: metrics } = useBodyMetrics();
-  const lastWeight = metrics?.find((m) => m.weightKg !== null);
-
-  const links = [
-    {
-      href: "/body/weight",
-      icon: "scale-outline" as const,
-      title: "Peso corporal",
-      sub: lastWeight ? `${lastWeight.weightKg} kg` : "Registrar",
-    },
-    {
-      href: "/body/measurements",
-      icon: "resize-outline" as const,
-      title: "Medidas",
-      sub: "Cintura, braço, coxa...",
-    },
-  ];
-
-  return (
-    <View className="gap-2">
-      {links.map((l) => (
-        <Pressable
-          key={l.href}
-          onPress={() => router.push(l.href as "/body/weight" | "/body/measurements")}
-          accessibilityRole="button"
-          className="flex-row items-center bg-ink-900 border border-ink-800 rounded-2xl px-4 py-3.5 active:bg-ink-850"
-        >
-          <View className="w-9 h-9 rounded-xl bg-ink-850 border border-ink-800 items-center justify-center mr-3">
-            <Ionicons name={l.icon} size={18} color={colors.chalkMuted} />
-          </View>
-          <View className="flex-1">
-            <Text className="text-chalk font-semibold">{l.title}</Text>
-            <Text className="text-chalk-faint text-xs mt-0.5">{l.sub}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color={colors.chalkFaint} />
-        </Pressable>
       ))}
     </View>
   );
@@ -215,217 +161,3 @@ function SocialCounts({ userId }: { userId: string }) {
     </View>
   );
 }
-
-// Toggles do que outros usuarios veem no seu perfil publico.
-function PublicProfileToggles({
-  user,
-  onChanged,
-}: {
-  user: { showRoutines: boolean; showStats: boolean; showBodyMetrics: boolean };
-  onChanged: () => Promise<void>;
-}) {
-  const update = useUpdateMe();
-
-  async function toggle(field: "showRoutines" | "showStats" | "showBodyMetrics", value: boolean) {
-    try {
-      await update.mutateAsync({ [field]: value });
-      await onChanged();
-    } catch {
-      // o toggle simplesmente nao muda se falhar
-    }
-  }
-
-  const items: {
-    field: "showRoutines" | "showStats" | "showBodyMetrics";
-    icon: keyof typeof Ionicons.glyphMap;
-    title: string;
-    sub: string;
-    value: boolean;
-  }[] = [
-    {
-      field: "showRoutines",
-      icon: "list-outline",
-      title: "Rotinas",
-      sub: "Quem vê seu perfil pode ver e copiar suas rotinas",
-      value: user.showRoutines,
-    },
-    {
-      field: "showStats",
-      icon: "stats-chart-outline",
-      title: "Estatísticas",
-      sub: "Treinos, sequência e volume no perfil público",
-      value: user.showStats,
-    },
-    {
-      field: "showBodyMetrics",
-      icon: "scale-outline",
-      title: "Medidas e peso",
-      sub: "Último peso e gordura % — sensível, desligado por padrão",
-      value: user.showBodyMetrics,
-    },
-  ];
-
-  return (
-    <View className="gap-2">
-      {items.map((it) => (
-        <Pressable
-          key={it.field}
-          onPress={() => toggle(it.field, !it.value)}
-          disabled={update.isPending}
-          accessibilityRole="switch"
-          accessibilityState={{ checked: it.value, busy: update.isPending }}
-          className="flex-row items-center bg-ink-900 border border-ink-800 rounded-2xl px-4 py-3.5 active:bg-ink-850"
-        >
-          <View className="w-9 h-9 rounded-xl bg-ink-850 border border-ink-800 items-center justify-center mr-3">
-            <Ionicons name={it.icon} size={18} color={colors.chalkMuted} />
-          </View>
-          <View className="flex-1">
-            <Text className="text-chalk font-semibold">{it.title}</Text>
-            <Text className="text-chalk-faint text-xs mt-0.5">{it.sub}</Text>
-          </View>
-          <View
-            className={`w-11 h-7 rounded-full justify-center px-0.5 ${
-              it.value ? "bg-volt" : "bg-ink-700"
-            }`}
-          >
-            <View
-              className={`w-6 h-6 rounded-full ${
-                it.value ? "bg-volt-on self-end" : "bg-chalk-faint self-start"
-              }`}
-            />
-          </View>
-        </Pressable>
-      ))}
-    </View>
-  );
-}
-
-// Privacidade da conta + fila de pedidos de seguidor.
-function SocialPrivacy({
-  user,
-  onChanged,
-}: {
-  user: { isPrivate: boolean };
-  onChanged: () => Promise<void>;
-}) {
-  const update = useUpdateMe();
-  const { data: requests } = useFollowRequests();
-  const pendingCount = requests?.length ?? 0;
-
-  async function togglePrivate() {
-    try {
-      await update.mutateAsync({ isPrivate: !user.isPrivate });
-      await onChanged();
-    } catch {
-      // o toggle simplesmente nao muda se falhar
-    }
-  }
-
-  return (
-    <View className="gap-2">
-      <Pressable
-        onPress={togglePrivate}
-        disabled={update.isPending}
-        accessibilityRole="switch"
-        accessibilityState={{ checked: user.isPrivate, busy: update.isPending }}
-        className="flex-row items-center bg-ink-900 border border-ink-800 rounded-2xl px-4 py-3.5 active:bg-ink-850"
-      >
-        <View className="w-9 h-9 rounded-xl bg-ink-850 border border-ink-800 items-center justify-center mr-3">
-          <Ionicons
-            name={user.isPrivate ? "lock-closed" : "lock-open-outline"}
-            size={18}
-            color={colors.chalkMuted}
-          />
-        </View>
-        <View className="flex-1">
-          <Text className="text-chalk font-semibold">Perfil privado</Text>
-          <Text className="text-chalk-faint text-xs mt-0.5">
-            {user.isPrivate
-              ? "Só seguidores que você aprova veem seus posts"
-              : "Qualquer pessoa pode ver seus posts"}
-          </Text>
-        </View>
-        {/* Toggle visual */}
-        <View
-          className={`w-11 h-7 rounded-full justify-center px-0.5 ${
-            user.isPrivate ? "bg-volt" : "bg-ink-700"
-          }`}
-        >
-          <View
-            className={`w-6 h-6 rounded-full ${
-              user.isPrivate ? "bg-volt-on self-end" : "bg-chalk-faint self-start"
-            }`}
-          />
-        </View>
-      </Pressable>
-
-      {user.isPrivate ? (
-        <Pressable
-          onPress={() => router.push("/social/activity")}
-          accessibilityRole="button"
-          className="flex-row items-center bg-ink-900 border border-ink-800 rounded-2xl px-4 py-3.5 active:bg-ink-850"
-        >
-          <View className="w-9 h-9 rounded-xl bg-ink-850 border border-ink-800 items-center justify-center mr-3">
-            <Ionicons name="heart-outline" size={18} color={colors.chalkMuted} />
-          </View>
-          <View className="flex-1">
-            <Text className="text-chalk font-semibold">Pedidos de seguidor</Text>
-            <Text className="text-chalk-faint text-xs mt-0.5">
-              {pendingCount > 0
-                ? `${pendingCount} esperando aprovação — veja em Atividade`
-                : "Aprovados na aba Atividade"}
-            </Text>
-          </View>
-          {pendingCount > 0 ? (
-            <View className="bg-volt rounded-full min-w-6 h-6 items-center justify-center px-1.5">
-              <Text className="text-volt-on text-xs font-extrabold">{pendingCount}</Text>
-            </View>
-          ) : (
-            <Ionicons name="chevron-forward" size={16} color={colors.chalkFaint} />
-          )}
-        </Pressable>
-      ) : null}
-    </View>
-  );
-}
-
-function GoalPicker({ current, onChanged }: { current: Goal; onChanged: () => Promise<void> }) {
-  const [saving, setSaving] = useState<Goal | null>(null);
-  const update = useUpdateMe();
-
-  async function pick(goal: Goal) {
-    if (goal === current) return;
-    setSaving(goal);
-    try {
-      await update.mutateAsync({ goal });
-      await onChanged();
-    } finally {
-      setSaving(null);
-    }
-  }
-
-  return (
-    <View className="flex-row gap-2">
-      {GOALS.map((g) => {
-        const active = g === current;
-        return (
-          <Pressable
-            key={g}
-            onPress={() => pick(g)}
-            disabled={saving !== null}
-            accessibilityRole="button"
-            accessibilityState={{ selected: active }}
-            className={`flex-1 py-3.5 rounded-xl items-center border ${
-              active ? "bg-volt border-volt" : "bg-ink-900 border-ink-800 active:bg-ink-850"
-            } ${saving === g ? "opacity-60" : ""}`}
-          >
-            <Text className={`font-bold text-sm ${active ? "text-volt-on" : "text-chalk"}`}>
-              {GOAL_LABELS[g]}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-

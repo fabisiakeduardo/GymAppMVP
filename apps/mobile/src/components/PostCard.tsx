@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, Text, Pressable, Image } from "react-native";
+import React, { useRef, useState } from "react";
+import { Animated, View, Text, Pressable, Image } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { MEASUREMENT_LABELS, type MeasurementKey } from "@gymapp/shared/constants";
@@ -51,10 +51,31 @@ export function PostCard({ post, onDeleted }: PostCardProps) {
   const [liked, setLiked] = useState<boolean | null>(null);
   const effectiveLiked = liked ?? post.likedByMe;
   const effectiveCount = post.likesCount + (liked === null ? 0 : liked ? 1 : -1);
+  const heartScale = useRef(new Animated.Value(1)).current;
+
+  // Pop so ao curtir (desfazer nao comemora).
+  function popHeart() {
+    heartScale.setValue(1);
+    Animated.sequence([
+      Animated.spring(heartScale, {
+        toValue: 1.4,
+        speed: 60,
+        bounciness: 14,
+        useNativeDriver: true,
+      }),
+      Animated.spring(heartScale, {
+        toValue: 1,
+        speed: 24,
+        bounciness: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }
 
   function toggleLike() {
     const next = !effectiveLiked;
     setLiked(next);
+    if (next) popHeart();
     likeMut.mutate(
       { postId: post.id, like: next },
       { onError: () => setLiked(null) },
@@ -127,11 +148,13 @@ export function PostCard({ post, onDeleted }: PostCardProps) {
             accessibilityState={{ selected: effectiveLiked }}
             className="flex-row items-center gap-1.5 py-1"
           >
-            <Ionicons
-              name={effectiveLiked ? "heart" : "heart-outline"}
-              size={20}
-              color={effectiveLiked ? colors.blood : colors.chalkMuted}
-            />
+            <Animated.View style={{ transform: [{ scale: heartScale }] }}>
+              <Ionicons
+                name={effectiveLiked ? "heart" : "heart-outline"}
+                size={20}
+                color={effectiveLiked ? colors.blood : colors.chalkMuted}
+              />
+            </Animated.View>
           </Pressable>
           {/* Contagem leva pra lista de quem curtiu (estilo Instagram). */}
           <Pressable

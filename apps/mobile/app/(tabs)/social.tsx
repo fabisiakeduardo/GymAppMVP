@@ -13,6 +13,7 @@ import { Button } from "../../src/components/Button";
 import { Avatar } from "../../src/components/Avatar";
 import { PostCard } from "../../src/components/PostCard";
 import { EmptyState, SkeletonRows } from "../../src/components/ui";
+import { FadeInView, staggerDelay } from "../../src/components/anim";
 import { useAuth } from "../../src/store/auth";
 import { useFeed, useStories, useUnreadCount } from "../../src/api/hooks";
 import { colors } from "../../src/theme/colors";
@@ -96,7 +97,11 @@ export default function Social() {
         <FlatList
           data={data?.posts ?? []}
           keyExtractor={(p: Post) => p.id}
-          renderItem={({ item }) => <PostCard post={item} />}
+          renderItem={({ item, index }) => (
+            <FadeInView delay={staggerDelay(index)}>
+              <PostCard post={item} />
+            </FadeInView>
+          )}
           ListHeaderComponent={<StoriesBar stories={stories ?? []} myId={user.id} />}
           ListEmptyComponent={
             <EmptyState

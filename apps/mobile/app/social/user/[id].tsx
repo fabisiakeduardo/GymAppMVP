@@ -97,6 +97,9 @@ export default function PublicProfile() {
                     <Ionicons name="lock-closed" size={14} color={colors.chalkFaint} />
                   ) : null}
                 </View>
+                <Text className="text-chalk-faint text-sm" numberOfLines={1}>
+                  @{profile.username}
+                </Text>
                 {profile.bio ? (
                   <Text className="text-chalk-muted text-sm mt-1" numberOfLines={2}>
                     {profile.bio}
@@ -143,11 +146,13 @@ export default function PublicProfile() {
 
             {/* Acao principal: seguir / editar */}
             {isMe ? (
-              <Button
-                label="Editar perfil"
-                variant="ghost"
-                onPress={() => router.push("/profile/edit")}
-              />
+              <View className="mt-4">
+                <Button
+                  label="Editar perfil"
+                  variant="ghost"
+                  onPress={() => router.push("/profile/edit")}
+                />
+              </View>
             ) : (
               <FollowButton
                 isFollowing={profile.isFollowing}

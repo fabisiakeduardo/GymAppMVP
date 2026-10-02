@@ -42,6 +42,7 @@ function publicUserLite(u: User) {
   return {
     id: u.id,
     name: u.name,
+    username: u.username,
     avatarUrl: u.avatarUrl ?? null,
     bio: u.bio ?? null,
     isPrivate: u.isPrivate,
@@ -392,11 +393,15 @@ export function socialRoutes(db: Database) {
     .get(
       "/users/search",
       async ({ authUser, query }) => {
-        const q = (query.q ?? "").trim();
+        // Busca por nome ou @username — o @ inicial e opcional.
+        const q = (query.q ?? "").trim().replace(/^@+/, "");
         if (!q) return { users: [] };
         const rows = await db.query.users.findMany({
-          where: and(ilike(users.name, `%${q}%`), ne(users.id, authUser!.id)),
-          orderBy: [asc(users.name)],
+          where: and(
+            or(ilike(users.name, `%${q}%`), ilike(users.username, `%${q}%`)),
+            ne(users.id, authUser!.id),
+          ),
+          orderBy: [asc(users.username)],
           limit: 20,
         });
         const result = [];

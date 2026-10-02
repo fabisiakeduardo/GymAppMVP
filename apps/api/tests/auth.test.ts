@@ -9,12 +9,20 @@ describe("auth flow", () => {
   it("registra e retorna tokens + user publico (sem hash)", async () => {
     const { status, body } = await req("/auth/register", {
       method: "POST",
-      body: { email: "novo@teste.com", password: "senhaForte123", name: "Novo", goal: "cut" },
+      body: {
+        email: "novo@teste.com",
+        username: "novouser",
+        password: "senhaForte123",
+        name: "Novo",
+        goal: "cut",
+      },
     });
     expect(status).toBe(201);
     expect(body.accessToken).toBeString();
     expect(body.refreshToken).toBeString();
     expect(body.user.email).toBe("novo@teste.com");
+    expect(body.user.username).toBe("novouser");
+    expect(body.user.emailVerified).toBe(false);
     expect(body.user.goal).toBe("cut");
     expect(body.user).not.toHaveProperty("passwordHash");
   });
@@ -23,10 +31,75 @@ describe("auth flow", () => {
     await registerUser("dup@teste.com");
     const { status, body } = await req("/auth/register", {
       method: "POST",
-      body: { email: "dup@teste.com", password: "senhaForte123", name: "Dup" },
+      body: { email: "dup@teste.com", username: "outrouser", password: "senhaForte123", name: "Dup" },
     });
     expect(status).toBe(409);
     expect(body.error.code).toBe("EMAIL_TAKEN");
+  });
+
+  it("nao deixa registrar @ duplicado (case-insensitive)", async () => {
+    await registerUser("user1@teste.com", "maromba");
+    const { status, body } = await req("/auth/register", {
+      method: "POST",
+      body: {
+        email: "user2@teste.com",
+        username: "MAROMBA",
+        password: "senhaForte123",
+        name: "Dup",
+      },
+    });
+    expect(status).toBe(409);
+    expect(body.error.code).toBe("USERNAME_TAKEN");
+  });
+
+  it("username-available diz se o @ esta livre ou ocupado", async () => {
+    await registerUser("dono@teste.com", "dono_x");
+    const taken = await req("/auth/username-available?u=DONO_X");
+    expect(taken.body.available).toBe(false);
+    const free = await req("/auth/username-available?u=livre_123");
+    expect(free.body.available).toBe(true);
+    // formato invalido nao ta disponivel
+    const invalid = await req("/auth/username-available?u=a!");
+    expect(invalid.body.available).toBe(false);
+  });
+
+  it("troca de senha: atual errada falha, nova funciona no login", async () => {
+    const { accessToken, refreshToken } = await registerUser("senha@teste.com");
+
+    const wrong = await req("/auth/change-password", {
+      method: "POST",
+      token: accessToken,
+      body: { currentPassword: "errada123", newPassword: "novaSenha456" },
+    });
+    expect(wrong.status).toBe(400);
+    expect(wrong.body.error.code).toBe("WRONG_PASSWORD");
+
+    const ok = await req("/auth/change-password", {
+      method: "POST",
+      token: accessToken,
+      body: { currentPassword: "senhaForte123", newPassword: "novaSenha456" },
+    });
+    expect(ok.status).toBe(200);
+    expect(ok.body.accessToken).toBeString();
+
+    // Login com a senha nova funciona, com a velha nao.
+    const login = await req("/auth/login", {
+      method: "POST",
+      body: { email: "senha@teste.com", password: "novaSenha456" },
+    });
+    expect(login.status).toBe(200);
+    const oldLogin = await req("/auth/login", {
+      method: "POST",
+      body: { email: "senha@teste.com", password: "senhaForte123" },
+    });
+    expect(oldLogin.status).toBe(401);
+
+    // Refresh antigo foi revogado junto com a troca.
+    const refresh = await req("/auth/refresh", {
+      method: "POST",
+      body: { refreshToken },
+    });
+    expect(refresh.status).toBe(401);
   });
 
   it("login com credencial certa devolve tokens", async () => {

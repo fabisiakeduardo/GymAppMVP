@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, TextInput, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../theme/colors";
@@ -94,12 +94,50 @@ export function Pill({ text, active = false }: { text: string; active?: boolean 
 }
 
 // Campo de texto padrao do app: label sutil + caixa escura.
+// `password` liga o olho de mostrar/esconder dentro da caixa.
 export function Field({
   label,
+  password,
   ...props
 }: {
   label: string;
+  password?: boolean;
 } & React.ComponentProps<typeof TextInput>) {
+  const [hidden, setHidden] = useState(true);
+
+  if (password) {
+    return (
+      <View className="mb-4">
+        <Text className="text-chalk-faint text-[13px] mb-1.5">{label}</Text>
+        <View className="flex-row items-center bg-ink-900 border border-ink-800 rounded-xl">
+          <TextInput
+            placeholderTextColor={colors.chalkFaint}
+            accessibilityLabel={props.accessibilityLabel ?? label}
+            autoCapitalize="none"
+            autoCorrect={false}
+            secureTextEntry={hidden}
+            {...props}
+            className="flex-1 px-4 py-3.5 text-chalk text-base"
+            style={{ color: colors.chalk }}
+          />
+          <Pressable
+            onPress={() => setHidden((h) => !h)}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={hidden ? "Mostrar senha" : "Esconder senha"}
+            className="px-4"
+          >
+            <Ionicons
+              name={hidden ? "eye-off-outline" : "eye-outline"}
+              size={19}
+              color={colors.chalkFaint}
+            />
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View className="mb-4">
       <Text className="text-chalk-faint text-[13px] mb-1.5">{label}</Text>
@@ -130,36 +168,45 @@ export function Divider() {
 // Placeholder pulsante de carregamento — mantem a tela viva em vez de
 // mostrar "Carregando..." (que e ruido visual). Respeita reduce-motion?
 // O pulso e sutil (opacidade 1 -> 0.45) e curto, sem mover layout.
-export function Skeleton({ className = "", style }: { className?: string; style?: object }) {
+export function Skeleton({ className, delay = 0 }: { className?: string; delay?: number }) {
   const opacity = useRef(new Animated.Value(1)).current;
+
   useEffect(() => {
+    // delay escalonado cria uma onda de cima pra baixo — parece mais rapido.
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(opacity, { toValue: 0.45, duration: 700, useNativeDriver: true }),
+        Animated.timing(opacity, {
+          toValue: 0.45,
+          duration: 700,
+          useNativeDriver: true,
+        }),
         Animated.timing(opacity, { toValue: 1, duration: 700, useNativeDriver: true }),
       ]),
     );
-    loop.start();
-    return () => loop.stop();
-  }, [opacity]);
-  return <Animated.View className={`bg-ink-850 rounded-lg ${className}`} style={[{ opacity }, style]} />;
+    const start = Animated.delay(delay);
+    const seq = Animated.sequence([start, loop]);
+    seq.start();
+    return () => seq.stop();
+  }, [opacity, delay]);
+
+  return <Animated.View className={className} style={{ opacity }} />;
 }
 
 // Fileira de linhas-fantasma no formato do logbook (bloco de data + texto).
-export function SkeletonRows({ count = 4 }: { count?: number }) {
+export function SkeletonRows({ count = 3 }: { count?: number }) {
   return (
-    <View accessibilityLabel="Carregando" accessibilityRole="progressbar">
+    <View className="gap-3">
       {Array.from({ length: count }).map((_, i) => (
-        <View
-          key={i}
-          className={`flex-row items-center gap-3 py-3.5 ${i === count - 1 ? "" : "border-b border-ink-850"}`}
-        >
-          <Skeleton className="w-11 h-12 rounded-xl" />
-          <View className="flex-1 gap-1.5">
-            <Skeleton className="h-4 w-2/3" />
-            <Skeleton className="h-3 w-1/2" />
+        <View key={i} className="bg-ink-900 border border-ink-800 rounded-2xl p-4">
+          <View className="flex-row items-center gap-3">
+            <Skeleton className="w-10 h-10 rounded-full bg-ink-800" delay={i * 90} />
+            <View className="flex-1 gap-2">
+              <Skeleton className="h-3.5 w-3/5 rounded-md bg-ink-800" delay={i * 90 + 30} />
+              <Skeleton className="h-3 w-2/5 rounded-md bg-ink-800" delay={i * 90 + 60} />
+            </View>
           </View>
-          <Skeleton className="h-4 w-14" />
+          <Skeleton className="h-3 w-full rounded-md bg-ink-800 mt-3" delay={i * 90 + 45} />
+          <Skeleton className="h-3 w-4/5 rounded-md bg-ink-800 mt-2" delay={i * 90 + 75} />
         </View>
       ))}
     </View>

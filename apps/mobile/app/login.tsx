@@ -54,7 +54,7 @@ export default function Login() {
             value={password}
             onChangeText={setPassword}
             placeholder="Sua senha"
-            secureTextEntry
+            password
           />
 
           <ErrorText message={error} />

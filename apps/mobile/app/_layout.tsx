@@ -15,6 +15,7 @@ import { AuthProvider, useAuth } from "../src/store/auth";
 import { LiveWorkoutProvider } from "../src/store/liveWorkout";
 import { useRegisterPushToken } from "../src/api/hooks";
 import { getExpoPushToken } from "../src/lib/notifications";
+import { BootSplash } from "../src/components/BootSplash";
 import { colors } from "../src/theme/colors";
 
 // Online-first: TanStack cacheia leitura e reusa quando a rede oscila.
@@ -48,7 +49,14 @@ function PushRegistration() {
 export default function RootLayout() {
   // A fonte dos icones nao carrega sozinha na web — sem isso os glifos ficam vazios.
   const [iconsLoaded] = useFonts(Ionicons.font);
-  if (!iconsLoaded) return null;
+  // Boot: wordmark respirando em vez de tela preta — cobre fonts + sessao.
+  if (!iconsLoaded) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <BootSplash />
+      </GestureHandlerRootView>
+    );
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.ink950 }}>

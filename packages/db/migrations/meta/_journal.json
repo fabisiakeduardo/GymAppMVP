@@ -43,6 +43,13 @@
       "when": 1790966199148,
       "tag": "0005_famous_jubilee",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790968120554,
+      "tag": "0006_glorious_exiles",
+      "breakpoints": true
     }
   ]
 }

@@ -3,6 +3,9 @@ import type { Goal } from "@gymapp/shared/constants";
 export interface User {
   id: string;
   email: string;
+  username: string;
+  // Preparado pra confirmacao de email (fluxo ainda nao existe).
+  emailVerified: boolean;
   name: string;
   goal: Goal;
   heightCm: number | null;
@@ -124,6 +127,7 @@ export interface ProfileStats {
 export interface SocialUser {
   id: string;
   name: string;
+  username: string;
   avatarUrl: string | null;
   bio: string | null;
   isPrivate: boolean;

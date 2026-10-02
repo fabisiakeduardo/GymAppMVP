@@ -9,7 +9,7 @@ describe("validacao de input (TypeBox)", () => {
   it("rejeita registro com email invalido", async () => {
     const { status } = await req("/auth/register", {
       method: "POST",
-      body: { email: "nao-e-email", password: "senhaForte123", name: "X" },
+      body: { email: "nao-e-email", username: "testeuser", password: "senhaForte123", name: "X" },
     });
     expect(status).toBe(422);
   });
@@ -17,7 +17,7 @@ describe("validacao de input (TypeBox)", () => {
   it("rejeita senha curta", async () => {
     const { status } = await req("/auth/register", {
       method: "POST",
-      body: { email: "ok@teste.com", password: "123", name: "X" },
+      body: { email: "ok@teste.com", username: "testeuser", password: "123", name: "X" },
     });
     expect(status).toBe(422);
   });

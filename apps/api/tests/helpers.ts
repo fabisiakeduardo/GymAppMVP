@@ -43,14 +43,22 @@ export async function req(path: string, init: JsonRequestInit = {}) {
   return { status: res.status, body };
 }
 
-// Cria um usuario e devolve tokens + user.
-export async function registerUser(email = "maromba@teste.com") {
+// Cria um usuario e devolve tokens + user. O @ deriva do email se nao vier.
+export async function registerUser(email = "maromba@teste.com", username?: string) {
   const { body } = await req("/auth/register", {
     method: "POST",
-    body: { email, password: "senhaForte123", name: "Maromba", goal: "bulk" },
+    body: {
+      email,
+      // Prefixo u_ garante >=3 chars mesmo com email local curto ("a@" -> "u_a").
+      username:
+        username ?? `u_${email.split("@")[0]!.replace(/[^a-z0-9_.]/g, "").toLowerCase()}`.slice(0, 30),
+      password: "senhaForte123",
+      name: "Maromba",
+      goal: "bulk",
+    },
   });
   return body as {
-    user: { id: string; email: string; name: string; goal: string };
+    user: { id: string; email: string; username: string; name: string; goal: string };
     accessToken: string;
     refreshToken: string;
     expiresIn: number;

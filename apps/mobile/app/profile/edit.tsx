@@ -9,7 +9,7 @@ import { Button } from "../../src/components/Button";
 import { Field, ErrorText } from "../../src/components/ui";
 import { Avatar } from "../../src/components/Avatar";
 import { ActionSheet } from "../../src/components/ActionSheet";
-import { useUpdateMe } from "../../src/api/hooks";
+import { useUpdateMe, useDebounced, useUsernameAvailable } from "../../src/api/hooks";
 import { useAuth } from "../../src/store/auth";
 import { maskDateBR, sanitizeInt, parseDecimal } from "../../src/lib/masks";
 import {
@@ -38,10 +38,18 @@ function toBrDate(iso: string | null): string {
   return `${d}/${m}/${y}`;
 }
 
+// Mesma regra do servidor: minusculo, letras/numeros/underline/ponto, 3-30.
+const USERNAME_RE = /^[a-z0-9_.]{3,30}$/;
+
 export default function EditProfile() {
   const { user, refreshMe } = useAuth();
   const update = useUpdateMe();
   const [name, setName] = useState(user?.name ?? "");
+  const [username, setUsername] = useState(user?.username ?? "");
+  // So checa quando mudou — o @ atual e meu por definicao.
+  const checkedUsername = useDebounced(username);
+  const usernameChanged = username.toLowerCase() !== (user?.username ?? "").toLowerCase();
+  const availability = useUsernameAvailable(checkedUsername, usernameChanged);
   const [bio, setBio] = useState(user?.bio ?? "");
   const [height, setHeight] = useState(user?.heightCm ? String(user.heightCm) : "");
   const [birth, setBirth] = useState(toBrDate(user?.birthDate ?? null));
@@ -93,6 +101,14 @@ export default function EditProfile() {
       setError("O nome não pode ficar vazio.");
       return;
     }
+    if (!USERNAME_RE.test(username)) {
+      setError("O @ precisa ter 3-30 caracteres: letras, números, _ ou .");
+      return;
+    }
+    if (usernameChanged && availability.data?.available === false) {
+      setError("Esse @ já está em uso. Tenta outro.");
+      return;
+    }
     if (h !== null && (h < 50 || h > 300)) {
       setError("Altura em cm — informe um valor entre 50 e 300.");
       return;
@@ -106,6 +122,7 @@ export default function EditProfile() {
     try {
       await update.mutateAsync({
         name: name.trim(),
+        username: username.toLowerCase(),
         bio: bio.trim() || null,
         heightCm: h,
         birthDate: birth.trim() ? iso : null,
@@ -165,6 +182,27 @@ export default function EditProfile() {
         />
 
         <Field label="Nome" value={name} onChangeText={setName} placeholder="Seu nome" />
+
+        <Field
+          label="Nome de usuário"
+          value={username}
+          onChangeText={(t) =>
+            setUsername(t.replace(/^@+/, "").toLowerCase().replace(/[^a-z0-9_.]/g, "").slice(0, 30))
+          }
+          placeholder="ex: maria.fit"
+          autoCapitalize="none"
+          autoCorrect={false}
+          maxLength={30}
+        />
+        {usernameChanged ? (
+          availability.isFetching || checkedUsername !== username ? (
+            <Text className="text-chalk-faint text-xs -mt-2 mb-4">Verificando @{username}…</Text>
+          ) : availability.data?.available === false ? (
+            <Text className="text-blood text-xs -mt-2 mb-4">@{username} já está em uso</Text>
+          ) : availability.data?.available === true ? (
+            <Text className="text-volt text-xs -mt-2 mb-4">@{username} está livre</Text>
+          ) : null
+        ) : null}
 
         <Field
           label="Bio"

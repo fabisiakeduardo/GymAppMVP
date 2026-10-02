@@ -1,12 +1,19 @@
-import { Elysia } from "elysia";
-import { eq, and, isNull, gt } from "drizzle-orm";
+import { Elysia, t } from "elysia";
+import { eq, and, isNull, gt, ne, sql } from "drizzle-orm";
 import {
   users,
   refreshTokens,
   type Database,
   type User,
 } from "@gymapp/db";
-import { RegisterInput, LoginInput, RefreshInput, UpdateMeInput } from "@gymapp/shared";
+import {
+  RegisterInput,
+  LoginInput,
+  RefreshInput,
+  UpdateMeInput,
+  ChangePasswordInput,
+  USERNAME_PATTERN,
+} from "@gymapp/shared";
 import { authService } from "../plugins/auth";
 import { hashPassword, verifyPassword } from "../lib/password";
 import {
@@ -23,6 +30,8 @@ function publicUser(u: User) {
   return {
     id: u.id,
     email: u.email,
+    username: u.username,
+    emailVerified: u.emailVerified,
     name: u.name,
     goal: u.goal,
     heightCm: u.heightCm ?? null,
@@ -69,17 +78,27 @@ export function authRoutes(db: Database) {
     .post(
       "/register",
       async ({ body, jwt, issueTokens, set }) => {
-        const existing = await db.query.users.findFirst({
-          where: eq(users.email, body.email.toLowerCase()),
-        });
-        if (existing) {
+        const email = body.email.toLowerCase();
+        const username = body.username.toLowerCase();
+        const [existingEmail, existingUsername] = await Promise.all([
+          db.query.users.findFirst({ where: eq(users.email, email) }),
+          db.query.users.findFirst({
+            where: sql`lower(${users.username}) = ${username}`,
+          }),
+        ]);
+        if (existingEmail) {
           set.status = 409;
           return errorBody("EMAIL_TAKEN", "Esse email ja tem conta.");
+        }
+        if (existingUsername) {
+          set.status = 409;
+          return errorBody("USERNAME_TAKEN", "Esse @ já está em uso. Tenta outro.");
         }
         const [user] = await db
           .insert(users)
           .values({
-            email: body.email.toLowerCase(),
+            email,
+            username,
             passwordHash: await hashPassword(body.password),
             name: body.name,
             goal: body.goal ?? "maintain",
@@ -178,13 +197,71 @@ export function authRoutes(db: Database) {
       { requireAuth: true },
     )
 
-    // Atualiza meta, nome, altura e nascimento — usado no Perfil.
+    // Check de @ livre — publico, usado no registro e na edicao de perfil.
+    // Username nao e dado sensivel (e publico no perfil), entao sem auth.
+    .get(
+      "/username-available",
+      async ({ query }) => {
+        const u = query.u.toLowerCase();
+        if (!new RegExp(USERNAME_PATTERN).test(u)) return { available: false };
+        const taken = await db.query.users.findFirst({
+          where: sql`lower(${users.username}) = ${u}`,
+        });
+        return { available: !taken };
+      },
+      { query: t.Object({ u: t.String({ minLength: 1, maxLength: 30 }) }) },
+    )
+
+    // Troca de senha: pede a atual (rate-limited pra nao virar oracle),
+    // revoga TODAS as sessoes e devolve um par de tokens novo.
+    .post(
+      "/change-password",
+      async ({ authUser, body, jwt, issueTokens, set }) => {
+        const limit = rateLimit(`pwd:${authUser!.id}`, 8, 60_000);
+        if (!limit.allowed) {
+          set.status = 429;
+          return errorBody("RATE_LIMITED", "Muitas tentativas. Tenta de novo em 1 min.");
+        }
+        const ok = await verifyPassword(body.currentPassword, authUser!.passwordHash);
+        if (!ok) {
+          set.status = 400;
+          return errorBody("WRONG_PASSWORD", "Senha atual incorreta.");
+        }
+        await db
+          .update(users)
+          .set({ passwordHash: await hashPassword(body.newPassword), updatedAt: new Date() })
+          .where(eq(users.id, authUser!.id));
+
+        // Sessoes antigas morrem; o app ja salva o par novo da resposta.
+        await db.delete(refreshTokens).where(eq(refreshTokens.userId, authUser!.id));
+        const tokens = await issueTokens((p) => jwt.sign(p), authUser!);
+        return tokens;
+      },
+      { body: ChangePasswordInput, requireAuth: true },
+    )
+
+    // Atualiza meta, nome, @, altura e nascimento — usado no Perfil.
     .patch(
       "/me",
-      async ({ authUser, body }) => {
+      async ({ authUser, body, set }) => {
+        const patch = { ...body } as Record<string, unknown>;
+        if (typeof patch.username === "string") {
+          const username = patch.username.toLowerCase();
+          const taken = await db.query.users.findFirst({
+            where: and(
+              sql`lower(${users.username}) = ${username}`,
+              ne(users.id, authUser!.id),
+            ),
+          });
+          if (taken) {
+            set.status = 409;
+            return errorBody("USERNAME_TAKEN", "Esse @ já está em uso. Tenta outro.");
+          }
+          patch.username = username;
+        }
         const [updated] = await db
           .update(users)
-          .set({ ...body, updatedAt: new Date() })
+          .set({ ...patch, updatedAt: new Date() })
           .where(eq(users.id, authUser!.id))
           .returning();
         return { user: publicUser(updated!) };
