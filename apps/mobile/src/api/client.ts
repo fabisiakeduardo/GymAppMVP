@@ -1,9 +1,14 @@
+import { Platform } from "react-native";
 import Constants from "expo-constants";
 import { getTokens, saveTokens, clearTokens } from "../store/tokens";
 
+// Na web a API sempre esta na mesma maquina que serve o Metro — derivar do
+// hostname funciona em localhost, IP de LAN e proxies. No nativo (Expo Go)
+// usamos o apiUrl do app.json, que precisa ser o IP da maquina na rede.
 const API_URL =
-  (Constants.expoConfig?.extra?.apiUrl as string | undefined) ??
-  "http://localhost:3333";
+  Platform.OS === "web" && typeof window !== "undefined"
+    ? `${window.location.protocol}//${window.location.hostname}:3333`
+    : ((Constants.expoConfig?.extra?.apiUrl as string | undefined) ?? "http://localhost:3333");
 
 export class ApiError extends Error {
   code: string;
@@ -41,7 +46,7 @@ export async function apiFetch<T>(path: string, opts: RequestOptions = {}): Prom
       body: body ? JSON.stringify(body) : undefined,
     });
   } catch {
-    throw new ApiError(0, "OFFLINE", "Sem conexao. Confere a internet e tenta de novo.");
+    throw new ApiError(0, "OFFLINE", "Sem conexão. Verifique sua internet e tente novamente.");
   }
 
   if (res.status === 401 && auth && !opts._retry) {
@@ -53,7 +58,7 @@ export async function apiFetch<T>(path: string, opts: RequestOptions = {}): Prom
   const data = text ? JSON.parse(text) : null;
 
   if (!res.ok) {
-    const err = data?.error ?? { code: "UNKNOWN", message: "Deu ruim. Tenta de novo." };
+    const err = data?.error ?? { code: "UNKNOWN", message: "Algo deu errado. Tente novamente." };
     throw new ApiError(res.status, err.code, err.message);
   }
   return data as T;

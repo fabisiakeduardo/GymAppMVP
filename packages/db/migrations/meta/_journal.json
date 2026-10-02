@@ -8,6 +8,20 @@
       "when": 1787872877002,
       "tag": "0000_talented_franklin_richards",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790959003870,
+      "tag": "0001_uneven_marvel_apes",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790960858139,
+      "tag": "0002_mushy_nighthawk",
+      "breakpoints": true
     }
   ]
 }

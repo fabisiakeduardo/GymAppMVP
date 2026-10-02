@@ -105,3 +105,37 @@ export function computeProgression(sets: SetRecord[]): ProgressionPoint[] {
 
   return [...byDay.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
+
+// Segunda-feira (ISO week) do dia informado, zerada em UTC pra comparacao.
+function startOfIsoWeek(d: Date): Date {
+  const x = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const dow = x.getUTCDay(); // 0=dom .. 6=sab
+  const back = dow === 0 ? 6 : dow - 1;
+  x.setUTCDate(x.getUTCDate() - back);
+  return x;
+}
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+// Quantas semanas seguidas o usuario treinou, terminando na semana atual.
+// Semanas puladas quebram a sequencia; uma semana sem treino ainda nao zera
+// se a semana atual ainda nao acabou — se nao treinou essa semana mas treinou
+// na passada, a sequencia continua valendo (comeca a contar da anterior).
+export function computeWeeklyStreak(workoutDates: Array<string | Date>, now = new Date()): number {
+  if (workoutDates.length === 0) return 0;
+  const weeks = new Set<number>();
+  for (const d of workoutDates) {
+    const date = typeof d === "string" ? new Date(d) : d;
+    if (Number.isNaN(date.getTime())) continue;
+    weeks.add(startOfIsoWeek(date).getTime());
+  }
+  let cursor = startOfIsoWeek(now).getTime();
+  // Se a semana atual ainda nao tem treino, comeca pela anterior.
+  if (!weeks.has(cursor)) cursor -= WEEK_MS;
+  let streak = 0;
+  while (weeks.has(cursor)) {
+    streak++;
+    cursor -= WEEK_MS;
+  }
+  return streak;
+}

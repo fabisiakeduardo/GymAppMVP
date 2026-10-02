@@ -1,11 +1,17 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Button } from "../../src/components/Button";
-import { EmptyState, ErrorText } from "../../src/components/ui";
-import { useExercises, useCreateRoutine, type RoutineExerciseInput } from "../../src/api/hooks";
+import { EmptyState, Field, ErrorText } from "../../src/components/ui";
+import {
+  useExercises,
+  useCreateRoutine,
+  useUpdateRoutine,
+  useRoutine,
+  type RoutineExerciseInput,
+} from "../../src/api/hooks";
 import { useAuth } from "../../src/store/auth";
 import { colors } from "../../src/theme/colors";
 import type { Exercise } from "../../src/api/types";
@@ -16,22 +22,46 @@ interface Draft extends RoutineExerciseInput {
 
 export default function NewRoutine() {
   const { user } = useAuth();
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const editing = typeof id === "string" && id.length > 0;
+  const { data: existing } = useRoutine(editing ? id : "");
   const { data: exercises } = useExercises();
   const create = useCreateRoutine();
+  const updateMutation = useUpdateRoutine(editing ? id : "");
   const [name, setName] = useState("");
   const [items, setItems] = useState<Draft[]>([]);
   const [picking, setPicking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Modo edicao: preenche nome e exercicios quando a rotina carrega.
+  useEffect(() => {
+    if (!editing || hydrated || !existing) return;
+    setName(existing.name);
+    setItems(
+      existing.exercises.map((re, i) => ({
+        exerciseId: re.exerciseId,
+        name: re.exercise.name,
+        order: i,
+        targetSets: re.targetSets,
+        targetReps: re.targetReps,
+        targetWeight: re.targetWeight,
+      })),
+    );
+    setHydrated(true);
+  }, [editing, hydrated, existing]);
+
+  const title = editing ? "Editar rotina" : "Nova rotina";
 
   if (!user) {
     return (
       <SafeAreaView className="flex-1 bg-ink-950">
-        <Header title="Montar rotina" />
+        <Header title={title} />
         <EmptyState
-          title="Rotina precisa de conta"
-          body="Cria conta pra montar e salvar tuas rotinas — depois é só abrir e treinar."
+          title="Rotinas exigem uma conta"
+          body="Crie uma conta para montar e salvar suas rotinas."
         >
-          <Button label="Criar conta grátis" onPress={() => router.replace("/register")} />
+          <Button label="Criar conta gratuita" onPress={() => router.replace("/register")} />
         </EmptyState>
       </SafeAreaView>
     );
@@ -56,22 +86,24 @@ export default function NewRoutine() {
 
   async function save() {
     if (name.trim().length < 1) {
-      setError("Dá um nome pra rotina.");
+      setError("Informe um nome para a rotina.");
       return;
     }
     if (items.length === 0) {
-      setError("Adiciona pelo menos um exercício.");
+      setError("Adicione pelo menos um exercício.");
       return;
     }
     setError(null);
+    const payload = {
+      name: name.trim(),
+      exercises: items.map(({ name: _n, ...rest }) => rest),
+    };
     try {
-      await create.mutateAsync({
-        name: name.trim(),
-        exercises: items.map(({ name: _n, ...rest }) => rest),
-      });
+      if (editing) await updateMutation.mutateAsync(payload);
+      else await create.mutateAsync(payload);
       router.replace("/(tabs)/treinar");
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Não deu pra salvar.");
+      setError(e instanceof Error ? e.message : "Não foi possível salvar.");
     }
   }
 
@@ -79,24 +111,22 @@ export default function NewRoutine() {
     return <InlinePicker exercises={exercises ?? []} onPick={addExercise} onCancel={() => setPicking(false)} />;
   }
 
+  const saving = editing ? updateMutation.isPending : create.isPending;
+
   return (
     <SafeAreaView className="flex-1 bg-ink-950" edges={["top", "left", "right"]}>
-      <Header title="Montar rotina" />
+      <Header title={title} />
       <ScrollView contentContainerClassName="px-5 pb-28">
-        <Text className="text-chalk-faint text-xs mb-1">Nome da rotina</Text>
-        <TextInput
+        <Field
+          label="Nome da rotina"
           value={name}
           onChangeText={setName}
           placeholder="Ex: Peito e tríceps"
-          placeholderTextColor={colors.chalkFaint}
-          accessibilityLabel="Nome da rotina"
-          className="bg-ink-900 border border-ink-800 rounded-xl px-3 py-3 text-chalk mb-5 text-base"
-          style={{ color: colors.chalk }}
         />
 
         {items.length === 0 ? (
           <Text className="text-chalk-faint text-sm mb-4">
-            Adiciona exercícios e define séries × reps × carga alvo.
+            Adicione exercícios e defina séries × repetições × carga alvo.
           </Text>
         ) : (
           <View className="gap-3 mb-4">
@@ -130,12 +160,12 @@ export default function NewRoutine() {
           </View>
         )}
 
-        <Button label="+ Adicionar exercício" onPress={() => setPicking(true)} variant="ghost" />
+        <Button label="Adicionar exercício" onPress={() => setPicking(true)} variant="ghost" />
         <ErrorText message={error} />
       </ScrollView>
 
-      <View className="absolute left-0 right-0 bottom-0 px-5 py-4 bg-ink-950 border-t border-ink-800">
-        <Button label="Salvar rotina" onPress={save} loading={create.isPending} />
+      <View className="absolute left-0 right-0 bottom-0 px-5 py-4 bg-ink-950 border-t border-ink-850">
+        <Button label={editing ? "Salvar alterações" : "Salvar rotina"} onPress={save} loading={saving} />
       </View>
     </SafeAreaView>
   );
@@ -147,7 +177,7 @@ function Header({ title }: { title: string }) {
       <Pressable onPress={() => router.back()} accessibilityLabel="Voltar" className="w-11 h-11 justify-center">
         <Ionicons name="chevron-back" size={26} color={colors.chalk} />
       </Pressable>
-      <Text className="text-chalk text-xl font-extrabold flex-1">{title}</Text>
+      <Text className="text-chalk text-2xl font-extrabold tracking-tight flex-1">{title}</Text>
     </View>
   );
 }
@@ -163,7 +193,7 @@ function NumField({
 }) {
   return (
     <View className="flex-1">
-      <Text className="text-chalk-faint text-xs mb-1">{label}</Text>
+      <Text className="text-chalk-faint text-[13px] mb-1">{label}</Text>
       <TextInput
         value={value ? String(value) : ""}
         onChangeText={(t) => onChange(parseInt(t, 10) || 0)}
@@ -171,8 +201,8 @@ function NumField({
         placeholder="0"
         placeholderTextColor={colors.chalkFaint}
         accessibilityLabel={label}
-        className="bg-ink-800 border border-ink-700 rounded-xl px-3 py-2 text-chalk text-lg font-bold"
-        style={{ color: colors.chalk }}
+        className="bg-ink-850 border border-ink-800 rounded-xl px-3 py-2 text-chalk text-lg font-bold"
+        style={{ color: colors.chalk, fontVariant: ["tabular-nums"] }}
       />
     </View>
   );

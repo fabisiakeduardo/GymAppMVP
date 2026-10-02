@@ -4,8 +4,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useWorkout } from "../../src/api/hooks";
+import { SkeletonRows } from "../../src/components/ui";
 import { colors } from "../../src/theme/colors";
-import type { WorkoutSet } from "../../src/api/types";
+import type { Workout, WorkoutSet } from "../../src/api/types";
+
+function fmtVolume(kg: number): string {
+  if (kg >= 1000) return `${(kg / 1000).toFixed(1).replace(".", ",")}t`;
+  return `${Math.round(kg)} kg`;
+}
 
 export default function WorkoutDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -35,27 +41,45 @@ export default function WorkoutDetail() {
 
       <ScrollView contentContainerClassName="px-5 pb-10">
         {isLoading ? (
-          <Text className="text-chalk-faint">Carregando...</Text>
+          <SkeletonRows count={5} />
         ) : workout ? (
           <>
-            <Text className="text-chalk-muted mb-5">
-              {new Date(workout.startedAt).toLocaleString("pt-BR")}
+            <Text className="text-chalk-muted">
+              {new Date(workout.startedAt).toLocaleDateString("pt-BR", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              })}
+              {" · "}
+              {new Date(workout.startedAt).toLocaleTimeString("pt-BR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
             </Text>
+
+            <SummaryStrip workout={workout} />
             {byExercise.map((ex, i) => (
-              <View key={i} className="mb-5 bg-ink-900 border border-ink-800 rounded-2xl p-4">
-                <Text className="text-chalk font-bold text-base mb-3">{ex.name}</Text>
+              <View key={i} className="mb-6">
+                <Text className="text-chalk text-lg font-bold tracking-tight mb-1">{ex.name}</Text>
                 {ex.sets
                   .sort((a, b) => a.setNumber - b.setNumber)
-                  .map((s) => (
-                    <View key={s.id} className="flex-row items-center justify-between py-1.5">
-                      <Text className="text-chalk-faint w-10">#{s.setNumber}</Text>
-                      <Text className="text-chalk font-semibold flex-1">
+                  .map((s, index) => (
+                    <View
+                      key={s.id}
+                      className={`flex-row items-center justify-between py-3 ${
+                        index === ex.sets.length - 1 ? "" : "border-b border-ink-850"
+                      }`}
+                    >
+                      <Text className="text-chalk-faint font-semibold w-14 text-sm">
+                        Série {s.setNumber}
+                      </Text>
+                      <Text className="text-chalk font-bold" style={{ fontVariant: ["tabular-nums"] }}>
                         {s.weight} kg × {s.reps}
                       </Text>
                       {s.completed ? (
                         <Ionicons name="checkmark-circle" size={18} color={colors.volt} />
                       ) : (
-                        <Text className="text-chalk-faint text-xs">não feita</Text>
+                        <Text className="text-chalk-faint text-xs">não concluída</Text>
                       )}
                     </View>
                   ))}
@@ -73,5 +97,41 @@ export default function WorkoutDetail() {
         )}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+// Resumo do treino: duracao, series concluidas e volume total.
+function SummaryStrip({ workout }: { workout: Workout }) {
+  const mins = workout.finishedAt
+    ? Math.round(
+        (new Date(workout.finishedAt).getTime() - new Date(workout.startedAt).getTime()) / 60000,
+      )
+    : null;
+  const doneSets = workout.sets.filter((s) => s.completed).length;
+  const vol = workout.sets.reduce((acc, s) => acc + (s.completed ? s.weight * s.reps : 0), 0);
+
+  const items = [
+    { label: "Duração", value: mins !== null ? `${mins} min` : "—" },
+    { label: "Séries", value: String(doneSets) },
+    { label: "Volume", value: vol > 0 ? fmtVolume(vol) : "—" },
+  ];
+
+  return (
+    <View className="flex-row bg-ink-900 border border-ink-800 rounded-2xl my-5">
+      {items.map((it, i) => (
+        <View
+          key={it.label}
+          className={`flex-1 py-3 items-center ${i > 0 ? "border-l border-ink-800" : ""}`}
+        >
+          <Text
+            className="text-chalk text-lg font-extrabold tracking-tight"
+            style={{ fontVariant: ["tabular-nums"] }}
+          >
+            {it.value}
+          </Text>
+          <Text className="text-chalk-faint text-[11px] mt-0.5">{it.label}</Text>
+        </View>
+      ))}
+    </View>
   );
 }

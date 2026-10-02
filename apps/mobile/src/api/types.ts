@@ -1,10 +1,13 @@
-import type { Goal } from "@gymapp/shared";
+import type { Goal } from "@gymapp/shared/constants";
 
 export interface User {
   id: string;
   email: string;
   name: string;
   goal: Goal;
+  heightCm: number | null;
+  birthDate: string | null; // YYYY-MM-DD
+  avatarUrl: string | null; // data URL ou http(s)
   createdAt: string;
 }
 
@@ -37,6 +40,7 @@ export interface RoutineExercise {
 export interface Routine {
   id: string;
   name: string;
+  source: "manual" | "ai";
   createdAt: string;
   exercises: RoutineExercise[];
 }
@@ -83,9 +87,25 @@ export interface ProgressionPoint {
 
 export interface BodyMetric {
   id: string;
-  date: string;
-  weightKg: number;
+  date: string; // YYYY-MM-DD
+  weightKg: number | null;
   bodyFat: number | null;
   measurements: Record<string, number>;
   photoUrl: string | null;
+}
+
+export interface BodyMetricInput {
+  date?: string;
+  weightKg?: number | null;
+  bodyFat?: number | null;
+  measurements?: Record<string, number>;
+}
+
+export interface ProfileStats {
+  totalWorkouts: number;
+  totalSets: number;
+  totalVolumeKg: number;
+  weeklyStreak: number;
+  lastWorkoutAt: string | null;
+  favoriteExercise: { exerciseId: string; name: string; times: number } | null;
 }

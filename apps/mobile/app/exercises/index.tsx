@@ -7,7 +7,7 @@ import { Button } from "../../src/components/Button";
 import { EmptyState, Pill, ErrorText } from "../../src/components/ui";
 import { useExercises, useCreateExercise } from "../../src/api/hooks";
 import { useLiveWorkout } from "../../src/store/liveWorkout";
-import { MUSCLE_GROUPS, EQUIPMENT } from "@gymapp/shared";
+import { MUSCLE_GROUPS, EQUIPMENT } from "@gymapp/shared/constants";
 import { colors } from "../../src/theme/colors";
 import type { Exercise } from "../../src/api/types";
 
@@ -17,15 +17,24 @@ export default function ExerciseLibrary() {
   const { data: exercises, isLoading } = useExercises();
   const { addExerciseToWorkout } = useLiveWorkout();
   const [q, setQ] = useState("");
+  const [muscle, setMuscle] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+
+  // Chips de musculo nascem dos dados (nao da lista fixa) — inclui customs.
+  const muscleOptions = useMemo(() => {
+    const seen = new Set<string>();
+    for (const e of exercises ?? []) if (e.muscleGroup) seen.add(e.muscleGroup);
+    return [...seen].sort();
+  }, [exercises]);
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return exercises ?? [];
-    return (exercises ?? []).filter(
-      (e) => e.name.toLowerCase().includes(term) || e.muscleGroup.includes(term),
-    );
-  }, [exercises, q]);
+    return (exercises ?? []).filter((e) => {
+      if (muscle && e.muscleGroup !== muscle) return false;
+      if (!term) return true;
+      return e.name.toLowerCase().includes(term) || e.muscleGroup.includes(term);
+    });
+  }, [exercises, q, muscle]);
 
   function onSelect(ex: Exercise) {
     if (isPicking) {
@@ -40,12 +49,12 @@ export default function ExerciseLibrary() {
         <Pressable onPress={() => router.back()} accessibilityLabel="Voltar" className="w-11 h-11 justify-center">
           <Ionicons name="chevron-back" size={26} color={colors.chalk} />
         </Pressable>
-        <Text className="text-chalk text-xl font-extrabold flex-1">
+        <Text className="text-chalk text-2xl font-extrabold tracking-tight flex-1">
           {isPicking ? "Adicionar exercício" : "Exercícios"}
         </Text>
       </View>
 
-      <View className="px-5 pb-3">
+      <View className="px-5 pb-2">
         <View className="bg-ink-900 border border-ink-800 rounded-xl px-3 flex-row items-center">
           <Ionicons name="search" size={18} color={colors.chalkFaint} />
           <TextInput
@@ -60,6 +69,25 @@ export default function ExerciseLibrary() {
         </View>
       </View>
 
+      {/* Filtro por musculo — chips horizontais, derivados dos dados */}
+      {!creating && muscleOptions.length > 0 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerClassName="px-5 pb-3 gap-2"
+        >
+          <MuscleChip label="Todos" active={muscle === null} onPress={() => setMuscle(null)} />
+          {muscleOptions.map((m) => (
+            <MuscleChip
+              key={m}
+              label={m.replace("_", " ")}
+              active={muscle === m}
+              onPress={() => setMuscle(muscle === m ? null : m)}
+            />
+          ))}
+        </ScrollView>
+      ) : null}
+
       {creating ? (
         <CreateCustom onDone={() => setCreating(false)} />
       ) : (
@@ -68,35 +96,43 @@ export default function ExerciseLibrary() {
             {isLoading ? (
               <Text className="text-chalk-faint">Carregando...</Text>
             ) : filtered.length > 0 ? (
-              <View className="gap-2">
-                {filtered.map((ex) => (
+              <View>
+                {filtered.map((ex, i) => (
                   <Pressable
                     key={ex.id}
                     onPress={() => onSelect(ex)}
-                    className="bg-ink-900 border border-ink-800 rounded-xl p-4 flex-row items-center justify-between active:bg-ink-800"
+                    accessibilityRole="button"
+                    className={`flex-row items-center justify-between py-3.5 -mx-2 px-2 rounded-lg active:bg-ink-900 ${
+                      i === filtered.length - 1 ? "" : "border-b border-ink-850"
+                    }`}
                   >
                     <View className="flex-1 pr-2">
-                      <Text className="text-chalk font-bold text-base">{ex.name}</Text>
+                      <View className="flex-row items-center gap-2">
+                        <Text className="text-chalk font-semibold text-[15px]">{ex.name}</Text>
+                        {ex.isCustom ? <Pill text="Personalizado" /> : null}
+                      </View>
                       <Text className="text-chalk-faint text-xs mt-0.5 capitalize">
-                        {ex.muscleGroup} · {ex.equipment.replace("_", " ")}
+                        {ex.muscleGroup.replace("_", " ")} · {ex.equipment.replace("_", " ")}
                       </Text>
                     </View>
-                    {ex.isCustom ? <Pill text="Meu" /> : null}
                     {isPicking ? (
-                      <Ionicons name="add-circle" size={26} color={colors.volt} />
-                    ) : null}
+                      <Ionicons name="add-circle" size={24} color={colors.volt} />
+                    ) : (
+                      <Ionicons name="chevron-forward" size={16} color={colors.chalkFaint} />
+                    )}
                   </Pressable>
                 ))}
               </View>
             ) : (
               <EmptyState
-                title="Nada com esse nome"
-                body="Não achou? Cria o teu — fica salvo só pra você."
+                icon="search-outline"
+                title="Nenhum exercício encontrado"
+                body="Não encontrou? Crie um exercício personalizado — ele fica salvo na sua conta."
               />
             )}
           </ScrollView>
 
-          <View className="absolute left-0 right-0 bottom-0 px-5 py-4 bg-ink-950 border-t border-ink-800">
+          <View className="absolute left-0 right-0 bottom-0 px-5 py-4 bg-ink-950 border-t border-ink-850">
             <Button label="Criar exercício" onPress={() => setCreating(true)} variant="ghost" />
           </View>
         </>
@@ -114,7 +150,7 @@ function CreateCustom({ onDone }: { onDone: () => void }) {
 
   async function submit() {
     if (name.trim().length < 2) {
-      setError("Dá um nome de pelo menos 2 letras.");
+      setError("Informe um nome com pelo menos 2 letras.");
       return;
     }
     setError(null);
@@ -122,20 +158,20 @@ function CreateCustom({ onDone }: { onDone: () => void }) {
       await create.mutateAsync({ name: name.trim(), muscleGroup: muscle, equipment: equip });
       onDone();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Não deu pra criar.");
+      setError(e instanceof Error ? e.message : "Não foi possível criar.");
     }
   }
 
   return (
     <ScrollView contentContainerClassName="px-5 pb-10">
-      <Text className="text-chalk-faint text-xs mb-1">Nome</Text>
+      <Text className="text-chalk-faint text-[13px] mb-1.5">Nome</Text>
       <TextInput
         value={name}
         onChangeText={setName}
         placeholder="Ex: Rosca 21"
         placeholderTextColor={colors.chalkFaint}
         accessibilityLabel="Nome do exercício"
-        className="bg-ink-900 border border-ink-800 rounded-xl px-3 py-3 text-chalk mb-4"
+        className="bg-ink-900 border border-ink-800 rounded-xl px-4 py-3.5 text-chalk text-base mb-4"
         style={{ color: colors.chalk }}
       />
 
@@ -148,6 +184,32 @@ function CreateCustom({ onDone }: { onDone: () => void }) {
         <Button label="Cancelar" onPress={onDone} variant="ghost" />
       </View>
     </ScrollView>
+  );
+}
+
+// Chip de filtro por musculo.
+function MuscleChip({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      className={`px-3.5 py-2 rounded-full border ${
+        active ? "bg-volt border-volt" : "bg-ink-900 border-ink-800 active:bg-ink-850"
+      }`}
+    >
+      <Text className={`text-[13px] font-semibold capitalize ${active ? "text-volt-on" : "text-chalk-muted"}`}>
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 

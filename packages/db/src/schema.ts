@@ -25,6 +25,10 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   name: text("name").notNull(),
   goal: goalEnum("goal").notNull().default("maintain"),
+  heightCm: doublePrecision("height_cm"),
+  birthDate: date("birth_date"),
+  // Foto de perfil: data URL comprimida (MVP sem storage externo).
+  avatarUrl: text("avatar_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
@@ -69,6 +73,8 @@ export const routines = pgTable("routines", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  // 'manual' | 'ai' — marca rotina montada pela IA quando esse recurso chegar.
+  source: text("source").notNull().default("manual"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
@@ -125,7 +131,8 @@ export const bodyMetrics = pgTable("body_metrics", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   date: date("date").notNull().defaultNow(),
-  weightKg: doublePrecision("weight_kg").notNull(),
+  // Nullable: um registro pode ser so de medidas/%gordura, sem peso.
+  weightKg: doublePrecision("weight_kg"),
   bodyFat: doublePrecision("body_fat"),
   measurements: jsonb("measurements").$type<Record<string, number>>().default({}),
   photoUrl: text("photo_url"),

@@ -14,7 +14,7 @@ export function ProgressionChart({ points }: { points: ProgressionPoint[] }) {
     return (
       <View className="h-44 items-center justify-center">
         <Text className="text-chalk-faint text-sm text-center">
-          Treina esse exercicio mais uma vez pra ver a linha subir.
+          Conclua outro treino com este exercício para ver a progressão.
         </Text>
       </View>
     );

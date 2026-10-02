@@ -35,3 +35,29 @@ export const EQUIPMENT = [
   "outro",
 ] as const;
 export type Equipment = (typeof EQUIPMENT)[number];
+
+// Medidas corporais (cm) registradas em body_metrics.measurements.
+export const MEASUREMENT_KEYS = [
+  "peito",
+  "cintura",
+  "quadril",
+  "braco_direito",
+  "braco_esquerdo",
+  "coxa_direita",
+  "coxa_esquerda",
+  "panturrilha",
+  "pescoco",
+] as const;
+export type MeasurementKey = (typeof MEASUREMENT_KEYS)[number];
+
+export const MEASUREMENT_LABELS: Record<MeasurementKey, string> = {
+  peito: "Peito",
+  cintura: "Cintura",
+  quadril: "Quadril",
+  braco_direito: "Braço dir.",
+  braco_esquerdo: "Braço esq.",
+  coxa_direita: "Coxa dir.",
+  coxa_esquerda: "Coxa esq.",
+  panturrilha: "Panturrilha",
+  pescoco: "Pescoço",
+};

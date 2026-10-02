@@ -27,11 +27,11 @@ export function Button({
 }: ButtonProps) {
   const isDisabled = disabled || loading;
 
-  const base = large ? "py-5 px-6 rounded-2xl" : "py-4 px-5 rounded-xl";
+  const base = large ? "py-5 px-6 rounded-2xl" : "py-3.5 px-5 rounded-xl";
   const byVariant: Record<Variant, string> = {
     primary: "bg-volt active:bg-volt-dim",
-    ghost: "bg-ink-800 active:bg-ink-700 border border-ink-700",
-    danger: "bg-transparent active:bg-ink-900 border border-blood",
+    ghost: "bg-ink-850 active:bg-ink-800 border border-ink-800",
+    danger: "bg-transparent active:bg-blood/10 border border-blood/60",
   };
   const textByVariant: Record<Variant, string> = {
     primary: "text-volt-on",

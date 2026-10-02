@@ -25,6 +25,9 @@ function publicUser(u: User) {
     email: u.email,
     name: u.name,
     goal: u.goal,
+    heightCm: u.heightCm ?? null,
+    birthDate: u.birthDate ?? null,
+    avatarUrl: u.avatarUrl ?? null,
     createdAt: u.createdAt.toISOString(),
   };
 }
@@ -170,7 +173,7 @@ export function authRoutes(db: Database) {
       { requireAuth: true },
     )
 
-    // Atualiza meta (cut/bulk/maintain) e nome — usado no Perfil.
+    // Atualiza meta, nome, altura e nascimento — usado no Perfil.
     .patch(
       "/me",
       async ({ authUser, body }) => {

@@ -7,7 +7,26 @@ import type {
   PR,
   ProgressionPoint,
   BodyMetric,
+  BodyMetricInput,
+  ProfileStats,
+  User,
 } from "./types";
+import type { Goal } from "@gymapp/shared/constants";
+
+// --- Perfil / conta ---
+export function useUpdateMe() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: {
+      name?: string;
+      goal?: Goal;
+      heightCm?: number | null;
+      birthDate?: string | null;
+      avatarUrl?: string | null;
+    }) => apiFetch<{ user: User }>("/auth/me", { method: "PATCH", body }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["me"] }),
+  });
+}
 
 // --- Exercises ---
 export function useExercises() {
@@ -55,6 +74,23 @@ export function useCreateRoutine() {
   return useMutation({
     mutationFn: (body: { name: string; exercises: RoutineExerciseInput[] }) =>
       apiFetch<{ routine: Routine }>("/routines", { method: "POST", body }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["routines"] }),
+  });
+}
+
+export function useUpdateRoutine(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { name?: string; exercises?: RoutineExerciseInput[] }) =>
+      apiFetch<{ routine: Routine }>(`/routines/${id}`, { method: "PATCH", body }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["routines"] }),
+  });
+}
+
+export function useDeleteRoutine() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiFetch<{ ok: true }>(`/routines/${id}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["routines"] }),
   });
 }
@@ -107,11 +143,34 @@ export function useBodyMetrics() {
 export function useAddBodyMetric() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: {
-      weightKg: number;
-      bodyFat?: number | null;
-      measurements?: Record<string, number>;
-    }) => apiFetch<{ metric: BodyMetric }>("/body-metrics", { method: "POST", body }),
+    mutationFn: (body: BodyMetricInput) =>
+      apiFetch<{ metric: BodyMetric }>("/body-metrics", { method: "POST", body }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["body-metrics"] }),
+  });
+}
+
+export function useUpdateBodyMetric(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: BodyMetricInput) =>
+      apiFetch<{ metric: BodyMetric }>(`/body-metrics/${id}`, { method: "PATCH", body }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["body-metrics"] }),
+  });
+}
+
+export function useDeleteBodyMetric() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<{ ok: true }>(`/body-metrics/${id}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["body-metrics"] }),
+  });
+}
+
+// --- Stats ---
+export function useProfileStats() {
+  return useQuery({
+    queryKey: ["profile-stats"],
+    queryFn: () => apiFetch<{ stats: ProfileStats }>("/stats/profile").then((r) => r.stats),
   });
 }

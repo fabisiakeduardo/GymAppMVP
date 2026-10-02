@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { estimate1RM } from "@gymapp/shared/logic";
 import { apiFetch } from "../api/client";
+import { getDefaultRestSeconds } from "./prefs";
 import {
   type LiveWorkout,
   type RoutineSeed,
@@ -15,10 +17,28 @@ import {
 
 const STORAGE_KEY = "gymapp.liveWorkout";
 
+// Resumo do treino que acabou de encerrar — alimenta a tela de conclusao.
+export interface FinishedWorkout {
+  workoutId: string | null;
+  startedAt: string;
+  finishedAt: string;
+  setsDone: number;
+  setsTotal: number;
+  volumeKg: number;
+  exercises: Array<{
+    exerciseId: string;
+    name: string;
+    topWeight: number;
+    topReps: number;
+    bestE1RM: number;
+  }>;
+}
+
 interface LiveState {
   workout: LiveWorkout | null;
   hydrated: boolean;
   syncing: boolean;
+  lastFinished: FinishedWorkout | null;
   start: (seed: RoutineSeed) => Promise<void>;
   completeSet: (
     exerciseId: string,
@@ -32,8 +52,44 @@ interface LiveState {
   ) => void;
   addExtraSet: (exerciseId: string) => void;
   addExerciseToWorkout: (exercise: { exerciseId: string; name: string }) => void;
+  setRestSeconds: (seconds: number) => void;
   finish: () => Promise<void>;
   discard: () => Promise<void>;
+  clearLastFinished: () => void;
+}
+
+// Snapshot do treino antes de limpar — a tela de resumo le isso.
+function toFinished(workout: LiveWorkout): FinishedWorkout {
+  let setsDone = 0;
+  let setsTotal = 0;
+  let volumeKg = 0;
+  const exercises = workout.exercises.map((ex) => {
+    let topWeight = 0;
+    let topReps = 0;
+    let bestE1RM = 0;
+    for (const s of ex.sets) {
+      setsTotal++;
+      if (!s.completed) continue;
+      setsDone++;
+      volumeKg += s.weight * s.reps;
+      if (s.weight > topWeight) {
+        topWeight = s.weight;
+        topReps = s.reps;
+      }
+      const e1rm = estimate1RM(s.weight, s.reps);
+      if (e1rm > bestE1RM) bestE1RM = e1rm;
+    }
+    return { exerciseId: ex.exerciseId, name: ex.name, topWeight, topReps, bestE1RM };
+  });
+  return {
+    workoutId: workout.workoutId,
+    startedAt: workout.startedAt,
+    finishedAt: new Date().toISOString(),
+    setsDone,
+    setsTotal,
+    volumeKg,
+    exercises: exercises.filter((e) => e.topWeight > 0 || e.bestE1RM > 0),
+  };
 }
 
 const LiveContext = createContext<LiveState | null>(null);
@@ -42,6 +98,7 @@ export function LiveWorkoutProvider({ children }: { children: React.ReactNode })
   const [workout, setWorkout] = useState<LiveWorkout | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [lastFinished, setLastFinished] = useState<FinishedWorkout | null>(null);
   const workoutRef = useRef<LiveWorkout | null>(null);
 
   // Persiste no AsyncStorage a cada mudanca (o treino nunca se perde).
@@ -101,7 +158,9 @@ export function LiveWorkoutProvider({ children }: { children: React.ReactNode })
 
   const start = useCallback(
     async (seed: RoutineSeed) => {
-      const fresh = createLiveWorkout(seed);
+      // Rotina pode definir o descanso dela; se nao, usa a preferencia do user.
+      const restSeconds = seed.restSeconds ?? (await getDefaultRestSeconds());
+      const fresh = createLiveWorkout({ ...seed, restSeconds });
       persist(fresh);
       await flush(); // cria no servidor ja de cara (best-effort)
     },
@@ -149,6 +208,14 @@ export function LiveWorkoutProvider({ children }: { children: React.ReactNode })
     [persist],
   );
 
+  const setRestSeconds = useCallback(
+    (seconds: number) => {
+      if (!workoutRef.current) return;
+      persist({ ...workoutRef.current, restSeconds: seconds });
+    },
+    [persist],
+  );
+
   const finish = useCallback(async () => {
     const current = workoutRef.current;
     if (!current) return;
@@ -163,6 +230,8 @@ export function LiveWorkoutProvider({ children }: { children: React.ReactNode })
         // fica pendente; o treino ja esta salvo com as series
       }
     }
+    // Guarda o resumo antes de limpar — a tela /workout/done le isso.
+    setLastFinished(toFinished(current));
     persist(null);
   }, [flush, persist]);
 
@@ -170,9 +239,11 @@ export function LiveWorkoutProvider({ children }: { children: React.ReactNode })
     persist(null);
   }, [persist]);
 
+  const clearLastFinished = useCallback(() => setLastFinished(null), []);
+
   return (
     <LiveContext.Provider
-      value={{ workout, hydrated, syncing, start, completeSet, updateSet, addExtraSet, addExerciseToWorkout, finish, discard }}
+      value={{ workout, hydrated, syncing, lastFinished, start, completeSet, updateSet, addExtraSet, addExerciseToWorkout, setRestSeconds, finish, discard, clearLastFinished }}
     >
       {children}
     </LiveContext.Provider>

@@ -15,11 +15,20 @@ export function createApp(db: Database) {
   return new Elysia()
     .use(
       cors({
-        origin: env.corsOrigins,
+        // Em dev reflete qualquer origem (localhost, 127.0.0.1, LAN, proxies de
+        // IDE). Em producao respeita a allowlist de CORS_ORIGINS.
+        origin: env.isProd ? env.corsOrigins : true,
         methods: ["GET", "POST", "PATCH", "DELETE"],
         credentials: true,
       }),
     )
+    // Em dev, loga method+path de cada request (diagnostico de conectividade).
+    .onRequest(({ request }) => {
+      if (!env.isProd) {
+        const { pathname } = new URL(request.url);
+        if (pathname !== "/health") console.log(`${request.method} ${pathname}`);
+      }
+    })
     // Erros consistentes: { error: { code, message } }.
     .onError(({ error, code, set }) => {
       if (error instanceof ApiError) {

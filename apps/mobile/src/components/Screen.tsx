@@ -12,9 +12,9 @@ interface ScreenProps {
 // Container padrao das telas: fundo dark, safe area, header opcional.
 export function Screen({ children, scroll = true, title, subtitle }: ScreenProps) {
   const header = title ? (
-    <View className="mb-6">
-      <Text className="text-chalk text-3xl font-extrabold tracking-tight">{title}</Text>
-      {subtitle ? <Text className="text-chalk-muted text-base mt-1">{subtitle}</Text> : null}
+    <View className="mb-5">
+      <Text className="text-chalk text-[34px] leading-9 font-extrabold tracking-tighter">{title}</Text>
+      {subtitle ? <Text className="text-chalk-muted text-[15px] mt-1">{subtitle}</Text> : null}
     </View>
   ) : null;
 
@@ -23,14 +23,14 @@ export function Screen({ children, scroll = true, title, subtitle }: ScreenProps
       {scroll ? (
         <ScrollView
           className="flex-1"
-          contentContainerClassName="px-5 pt-4 pb-10"
+          contentContainerClassName="px-5 pt-3 pb-10"
           keyboardShouldPersistTaps="handled"
         >
           {header}
           {children}
         </ScrollView>
       ) : (
-        <View className="flex-1 px-5 pt-4">
+        <View className="flex-1 px-5 pt-3">
           {header}
           {children}
         </View>

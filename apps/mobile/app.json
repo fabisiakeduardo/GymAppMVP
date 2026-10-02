@@ -12,7 +12,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#0B0B0C"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.gymapp.maromba"
@@ -25,13 +27,20 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Escolha uma foto pro seu perfil."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "http://localhost:3333"
+      "apiUrl": "http://192.168.0.101:3333"
     }
   }
 }

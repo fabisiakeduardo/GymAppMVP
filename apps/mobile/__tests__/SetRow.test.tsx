@@ -17,6 +17,7 @@ describe("SetRow — fluxo de completar serie", () => {
     const { getByText } = render(
       <SetRow
         set={baseSet}
+        isCurrent={false}
         lastTime={{ weight: 80, reps: 8, when: "2026-01-01T10:00:00.000Z" }}
         onComplete={() => {}}
         onEdit={() => {}}
@@ -28,7 +29,7 @@ describe("SetRow — fluxo de completar serie", () => {
   it("ao digitar carga/reps e tocar no check, dispara onComplete com os valores", () => {
     const onComplete = jest.fn();
     const { getByLabelText } = render(
-      <SetRow set={baseSet} lastTime={null} onComplete={onComplete} onEdit={() => {}} />,
+      <SetRow set={baseSet} isCurrent={false} lastTime={null} onComplete={onComplete} onEdit={() => {}} />,
     );
 
     fireEvent.changeText(getByLabelText("Carga"), "100");
@@ -41,7 +42,7 @@ describe("SetRow — fluxo de completar serie", () => {
   it("aceita carga com virgula (padrao brasileiro)", () => {
     const onComplete = jest.fn();
     const { getByLabelText } = render(
-      <SetRow set={baseSet} lastTime={null} onComplete={onComplete} onEdit={() => {}} />,
+      <SetRow set={baseSet} isCurrent={false} lastTime={null} onComplete={onComplete} onEdit={() => {}} />,
     );
     fireEvent.changeText(getByLabelText("Carga"), "62,5");
     fireEvent.changeText(getByLabelText("Reps"), "10");

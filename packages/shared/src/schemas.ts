@@ -27,6 +27,11 @@ export type RefreshInput = Static<typeof RefreshInput>;
 export const UpdateMeInput = t.Object({
   name: t.Optional(t.String({ minLength: 1, maxLength: 80 })),
   goal: t.Optional(t.Union(GOALS.map((g) => t.Literal(g)))),
+  // Altura em cm e nascimento (YYYY-MM-DD) — null limpa o campo.
+  heightCm: t.Optional(t.Union([t.Number({ minimum: 50, maximum: 300 }), t.Null()])),
+  birthDate: t.Optional(t.Union([t.String({ format: "date" }), t.Null()])),
+  // Avatar: URL http(s) ou data URL (~400KB teto; o app comprime pra ~30KB).
+  avatarUrl: t.Optional(t.Union([t.String({ maxLength: 400_000 }), t.Null()])),
 });
 export type UpdateMeInput = Static<typeof UpdateMeInput>;
 
@@ -115,16 +120,20 @@ export type LogSetInput = Static<typeof LogSetInput>;
 // Body metrics
 // ---------------------------------------------------------------------------
 
+// Um registro de corpo pode ser so peso, so medida, so %gordura ou tudo junto.
 export const CreateBodyMetricInput = t.Object({
-  date: t.Optional(t.String()),
-  weightKg: t.Number({ minimum: 20, maximum: 500 }),
+  date: t.Optional(t.String({ format: "date" })),
+  weightKg: t.Optional(t.Union([t.Number({ minimum: 20, maximum: 500 }), t.Null()])),
   bodyFat: t.Optional(t.Union([t.Number({ minimum: 1, maximum: 70 }), t.Null()])),
   measurements: t.Optional(
-    t.Record(t.String(), t.Number({ minimum: 0, maximum: 500 })),
+    t.Record(t.String(), t.Union([t.Number({ minimum: 0, maximum: 500 }), t.Null()])),
   ),
   photoUrl: t.Optional(t.Union([t.String({ maxLength: 500 }), t.Null()])),
 });
 export type CreateBodyMetricInput = Static<typeof CreateBodyMetricInput>;
+
+export const UpdateBodyMetricInput = t.Partial(CreateBodyMetricInput);
+export type UpdateBodyMetricInput = Static<typeof UpdateBodyMetricInput>;
 
 // ---------------------------------------------------------------------------
 // Pagination

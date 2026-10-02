@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { apiFetch } from "../api/client";
 import { saveTokens, clearTokens, getTokens } from "./tokens";
 import type { AuthResponse, User } from "../api/types";
-import type { Goal } from "@gymapp/shared";
+import type { Goal } from "@gymapp/shared/constants";
 
 interface AuthState {
   user: User | null;

@@ -3,7 +3,7 @@ import { View, Text, Pressable } from "react-native";
 import { router } from "expo-router";
 import { Screen } from "../../src/components/Screen";
 import { Button } from "../../src/components/Button";
-import { Card, EmptyState, Divider } from "../../src/components/ui";
+import { Card, EmptyState, Row, Skeleton, SkeletonRows } from "../../src/components/ui";
 import { ProgressionChart } from "../../src/components/ProgressionChart";
 import { usePRs, useProgression } from "../../src/api/hooks";
 import { useAuth } from "../../src/store/auth";
@@ -22,66 +22,92 @@ export default function Progresso() {
     return (
       <Screen title="Progresso">
         <EmptyState
-          title="PR sem conta não existe"
-          body="Cria conta pra ver teus recordes e a carga subindo treino após treino."
+          icon="trophy-outline"
+          title="Entre para ver seus recordes"
+          body="Crie uma conta para acompanhar seus recordes e a evolução das cargas."
         >
-          <Button label="Criar conta grátis" onPress={() => router.push("/register")} />
+          <Button label="Criar conta gratuita" onPress={() => router.push("/register")} />
         </EmptyState>
       </Screen>
     );
   }
 
   return (
-    <Screen title="Progresso" subtitle="Recordes e evolução de carga.">
+    <Screen title="Progresso">
       {isLoading ? (
-        <Text className="text-chalk-faint">Carregando...</Text>
+        <View>
+          <Skeleton className="h-48 rounded-2xl" />
+          <Skeleton className="h-4 w-24 mt-6 mb-1" />
+          <SkeletonRows count={4} />
+        </View>
       ) : prs && prs.length > 0 ? (
         <>
-          <Card>
-            <Text className="text-chalk-muted text-sm font-semibold uppercase tracking-wide mb-2">
-              {activePr?.exerciseName ?? "Exercício"}
-            </Text>
+          <Card className="p-5">
+            <View className="flex-row items-baseline justify-between mb-3">
+              <Text className="text-chalk font-bold text-base flex-1 pr-2" numberOfLines={1}>
+                {activePr?.exerciseName ?? "Exercício"}
+              </Text>
+              {activePr ? (
+                <Text
+                  className="text-volt font-extrabold text-lg"
+                  style={{ fontVariant: ["tabular-nums"] }}
+                >
+                  {activePr.maxWeight} kg
+                </Text>
+              ) : null}
+            </View>
             <ProgressionChart points={points ?? []} />
           </Card>
 
-          <Divider />
-
-          <Text className="text-chalk-muted text-sm font-semibold uppercase tracking-wide mb-3">
-            Seus PRs
+          <Text className="text-chalk-faint text-[13px] font-semibold mt-6 mb-1">
+            Recordes
           </Text>
-          <View className="gap-3">
-            {prs.map((pr) => {
+          <View>
+            {prs.map((pr, i) => {
               const isActive = pr.exerciseId === activeId;
               return (
-                <Pressable
+                <Row
                   key={pr.exerciseId}
+                  last={i === prs.length - 1}
                   onPress={() => setSelected(pr.exerciseId)}
-                  className={`rounded-2xl p-4 border flex-row items-center justify-between ${
-                    isActive ? "bg-volt/10 border-volt" : "bg-ink-900 border-ink-800"
-                  }`}
-                >
-                  <View className="flex-row items-center gap-3 flex-1">
-                    <Ionicons name="trophy" size={22} color={colors.volt} />
-                    <View className="flex-1">
-                      <Text className="text-chalk font-bold">{pr.exerciseName}</Text>
-                      <Text className="text-chalk-faint text-xs">
-                        e1RM estimado {Math.round(pr.bestE1RM)} kg
-                      </Text>
+                  left={
+                    <View className="flex-row items-center gap-2.5">
+                      <Ionicons
+                        name={isActive ? "trophy" : "trophy-outline"}
+                        size={18}
+                        color={isActive ? colors.volt : colors.chalkFaint}
+                      />
+                      <View>
+                        <Text className="text-chalk font-semibold text-[15px]">
+                          {pr.exerciseName}
+                        </Text>
+                        <Text className="text-chalk-faint text-xs mt-0.5">
+                          1RM estimado {Math.round(pr.bestE1RM)} kg
+                        </Text>
+                      </View>
                     </View>
-                  </View>
-                  <View className="items-end">
-                    <Text className="text-volt text-lg font-extrabold">{pr.maxWeight} kg</Text>
-                    <Text className="text-chalk-faint text-xs">× {pr.maxWeightReps}</Text>
-                  </View>
-                </Pressable>
+                  }
+                  right={
+                    <>
+                      <Text
+                        className={`font-extrabold text-base ${isActive ? "text-volt" : "text-chalk"}`}
+                        style={{ fontVariant: ["tabular-nums"] }}
+                      >
+                        {pr.maxWeight} kg
+                      </Text>
+                      <Text className="text-chalk-faint text-xs">× {pr.maxWeightReps}</Text>
+                    </>
+                  }
+                />
               );
             })}
           </View>
         </>
       ) : (
         <EmptyState
-          title="Nenhum PR ainda"
-          body="Loga alguns treinos e teus recordes começam a pintar aqui."
+          icon="trophy-outline"
+          title="Nenhum recorde ainda"
+          body="Conclua alguns treinos e seus recordes aparecerão aqui."
         >
           <Button label="Ir treinar" onPress={() => router.push("/(tabs)/treinar")} />
         </EmptyState>

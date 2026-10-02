@@ -7,6 +7,10 @@ vez: X kg × Y" na cara, cronômetro de descanso automático e o treino em andam
 
 Dark mode por padrão, copy em pt-BR sem tom de robô, um CTA por tela.
 
+O **Perfil** já cobre o básico estilo Hevy: stats do atleta (treinos, sequência
+de semanas, volume total), edição de nome/altura/nascimento, peso corporal com
+gráfico e % gordura, medidas corporais e descanso padrão do cronômetro.
+
 > MVP: **sem** IA, feed social, gestão de aluno, offline-first com sync, web/desktop
 > ou pagamentos. O modelo de dados já prevê peso/medidas/metas pro que vem depois.
 
@@ -98,12 +102,12 @@ App: `bun run --cwd apps/mobile test` (jest-expo + Testing Library).
 Todas as rotas validam input via TypeBox e retornam erro no formato
 `{ error: { code, message } }`. Tudo (menos auth público) exige JWT.
 
-- `POST /auth/register` · `POST /auth/login` · `POST /auth/refresh` · `POST /auth/logout` · `GET /auth/me` · `PATCH /auth/me`
+- `POST /auth/register` · `POST /auth/login` · `POST /auth/refresh` · `POST /auth/logout` · `GET /auth/me` · `PATCH /auth/me` (nome, meta, altura, nascimento)
 - `GET/POST/PATCH/DELETE /exercises` (globais read-only; custom são do usuário)
 - `GET/POST/PATCH/DELETE /routines` (com exercícios aninhados)
 - `POST /workouts` · `PATCH /workouts/:id` · `POST /workouts/:id/sets` · `GET /workouts` · `GET /workouts/:id`
-- `GET /stats/prs` · `GET /stats/progression?exerciseId=`
-- `GET/POST /body-metrics`
+- `GET /stats/prs` · `GET /stats/progression?exerciseId=` · `GET /stats/profile` (treinos, séries, volume total, sequência de semanas, exercício mais feito)
+- `GET/POST/PATCH/DELETE /body-metrics` — registro por dia (upsert): peso, % gordura e medidas (peito, cintura, braços, coxas, panturrilha, pescoço)
 
 **Segurança:** hash argon2id, access token curto + refresh rotativo (revoga o antigo
 a cada refresh), rate-limit no login, erro de login genérico (não vaza se o email
