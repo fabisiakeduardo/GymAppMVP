@@ -22,6 +22,27 @@
       "when": 1790960858139,
       "tag": "0002_mushy_nighthawk",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790962841114,
+      "tag": "0003_warm_gamora",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790964300521,
+      "tag": "0004_clammy_thor",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790966199148,
+      "tag": "0005_famous_jubilee",
+      "breakpoints": true
     }
   ]
 }

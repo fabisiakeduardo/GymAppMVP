@@ -28,6 +28,11 @@ function publicUser(u: User) {
     heightCm: u.heightCm ?? null,
     birthDate: u.birthDate ?? null,
     avatarUrl: u.avatarUrl ?? null,
+    bio: u.bio ?? null,
+    isPrivate: u.isPrivate,
+    showRoutines: u.showRoutines,
+    showStats: u.showStats,
+    showBodyMetrics: u.showBodyMetrics,
     createdAt: u.createdAt.toISOString(),
   };
 }

@@ -1,0 +1,173 @@
+.features-head {
+  max-width: 640px;
+  margin-bottom: clamp(40px, 6vw, 64px);
+}
+
+.features-head .h-section {
+  margin-bottom: 16px;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+
+.feature {
+  grid-column: span 4;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--ink-900);
+  border: 1px solid var(--ink-800);
+  border-radius: 20px;
+  padding: 24px;
+  transition:
+    border-color 200ms ease,
+    transform 200ms var(--ease-out);
+}
+
+.feature-wide {
+  grid-column: span 7;
+}
+
+.features-grid > .feature:nth-child(2) {
+  grid-column: span 5;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .feature:hover {
+    border-color: var(--ink-700);
+    transform: translateY(-2px);
+  }
+}
+
+.feature-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--volt-wash);
+  color: var(--volt);
+  border: 1px solid rgba(215, 255, 62, 0.25);
+}
+
+.feature-title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.feature-body {
+  color: var(--chalk-muted);
+  font-size: 15px;
+  max-width: 52ch;
+}
+
+/* ---------- mini-assets dentro dos cards ---------- */
+
+.feature-asset {
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.mini-set {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 12px;
+  padding: 7px 9px;
+  margin-top: 8px;
+}
+
+.mini-set.is-done {
+  background: var(--volt-wash);
+}
+
+.mini-set.is-current {
+  background: var(--ink-850);
+  box-shadow: inset 2px 0 0 var(--volt);
+}
+
+.mini-num {
+  width: 20px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--volt);
+}
+
+.mini-field {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 40px;
+  flex: 1;
+  background: var(--ink-800);
+  border: 1px solid var(--ink-700);
+  border-radius: 10px;
+}
+
+.mini-set.is-done .mini-field {
+  border-color: rgba(215, 255, 62, 0.3);
+}
+
+.mini-field b {
+  font-size: 17px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.mini-field i {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--chalk-faint);
+}
+
+.mini-check {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--ink-800);
+  border: 1px solid var(--ink-700);
+  color: var(--chalk-faint);
+}
+
+.mini-set.is-done .mini-check {
+  background: var(--volt);
+  border-color: var(--volt);
+  color: var(--volt-on);
+}
+
+.mini-chart {
+  width: 100%;
+  height: auto;
+}
+
+.mini-chart-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--chalk-faint);
+}
+
+.mini-chart-labels .volt {
+  color: var(--volt);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 900px) {
+  .feature,
+  .feature-wide,
+  .features-grid > .feature:nth-child(2) {
+    grid-column: span 12;
+  }
+}

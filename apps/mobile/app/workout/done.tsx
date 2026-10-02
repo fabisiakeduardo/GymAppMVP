@@ -126,8 +126,25 @@ export default function WorkoutDone() {
           ))}
         </View>
 
-        <View className="mt-10">
-          <Button label="Fechar" onPress={() => router.replace("/(tabs)/treinar")} large />
+        <View className="mt-10 gap-3">
+          {lastFinished.workoutId ? (
+            <Button
+              label="Compartilhar no feed"
+              onPress={() =>
+                router.replace({
+                  pathname: "/social/compose",
+                  params: { workoutId: lastFinished.workoutId! },
+                })
+              }
+              large
+            />
+          ) : null}
+          <Button
+            label="Fechar"
+            onPress={() => router.replace("/(tabs)/treinar")}
+            variant={lastFinished.workoutId ? "ghost" : "primary"}
+            large
+          />
         </View>
       </ScrollView>
     </SafeAreaView>

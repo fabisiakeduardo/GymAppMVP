@@ -7,7 +7,13 @@ import { Button } from "../../src/components/Button";
 import { Avatar } from "../../src/components/Avatar";
 import { EmptyState, SectionTitle } from "../../src/components/ui";
 import { useAuth } from "../../src/store/auth";
-import { useBodyMetrics, useProfileStats, useUpdateMe } from "../../src/api/hooks";
+import {
+  useBodyMetrics,
+  useProfileStats,
+  useUpdateMe,
+  useFollowRequests,
+  useSocialProfile,
+} from "../../src/api/hooks";
 import { GOALS, GOAL_LABELS, type Goal } from "@gymapp/shared/constants";
 import { colors } from "../../src/theme/colors";
 
@@ -59,10 +65,22 @@ export default function Perfil() {
         </Pressable>
       </View>
 
+      {user.bio ? (
+        <Text className="text-chalk-muted text-sm leading-5 -mt-1 mb-1">{user.bio}</Text>
+      ) : null}
+
+      <SocialCounts userId={user.id} />
+
       <StatsRow />
 
       <SectionTitle>Seu corpo</SectionTitle>
       <BodyLinks />
+
+      <SectionTitle>Social</SectionTitle>
+      <SocialPrivacy user={user} onChanged={refreshMe} />
+
+      <SectionTitle>O que aparece no seu perfil</SectionTitle>
+      <PublicProfileToggles user={user} onChanged={refreshMe} />
 
       <SectionTitle>Sua meta</SectionTitle>
       <GoalPicker current={user.goal} onChanged={refreshMe} />
@@ -147,6 +165,226 @@ function BodyLinks() {
           <Ionicons name="chevron-forward" size={16} color={colors.chalkFaint} />
         </Pressable>
       ))}
+    </View>
+  );
+}
+
+// Contagens sociais do proprio perfil — posts/seguidores/seguindo clicaveis.
+function SocialCounts({ userId }: { userId: string }) {
+  const { data: profile } = useSocialProfile(userId);
+
+  const items = [
+    {
+      label: "posts",
+      value: profile?.postsCount,
+      href: `/social/user/${userId}`,
+    },
+    {
+      label: "seguidores",
+      value: profile?.followersCount,
+      href: `/social/follows/${userId}?type=followers`,
+    },
+    {
+      label: "seguindo",
+      value: profile?.followingCount,
+      href: `/social/follows/${userId}?type=following`,
+    },
+  ];
+
+  return (
+    <View className="flex-row bg-ink-900 border border-ink-800 rounded-2xl mb-4">
+      {items.map((it, i) => (
+        <Pressable
+          key={it.label}
+          onPress={() => router.push(it.href as never)}
+          accessibilityRole="button"
+          accessibilityLabel={`${it.value ?? 0} ${it.label}`}
+          className={`flex-1 py-3 items-center active:bg-ink-850 ${
+            i > 0 ? "border-l border-ink-800" : ""
+          }`}
+        >
+          <Text
+            className="text-chalk text-lg font-extrabold"
+            style={{ fontVariant: ["tabular-nums"] }}
+          >
+            {it.value ?? "–"}
+          </Text>
+          <Text className="text-chalk-faint text-[11px] mt-0.5">{it.label}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+// Toggles do que outros usuarios veem no seu perfil publico.
+function PublicProfileToggles({
+  user,
+  onChanged,
+}: {
+  user: { showRoutines: boolean; showStats: boolean; showBodyMetrics: boolean };
+  onChanged: () => Promise<void>;
+}) {
+  const update = useUpdateMe();
+
+  async function toggle(field: "showRoutines" | "showStats" | "showBodyMetrics", value: boolean) {
+    try {
+      await update.mutateAsync({ [field]: value });
+      await onChanged();
+    } catch {
+      // o toggle simplesmente nao muda se falhar
+    }
+  }
+
+  const items: {
+    field: "showRoutines" | "showStats" | "showBodyMetrics";
+    icon: keyof typeof Ionicons.glyphMap;
+    title: string;
+    sub: string;
+    value: boolean;
+  }[] = [
+    {
+      field: "showRoutines",
+      icon: "list-outline",
+      title: "Rotinas",
+      sub: "Quem vê seu perfil pode ver e copiar suas rotinas",
+      value: user.showRoutines,
+    },
+    {
+      field: "showStats",
+      icon: "stats-chart-outline",
+      title: "Estatísticas",
+      sub: "Treinos, sequência e volume no perfil público",
+      value: user.showStats,
+    },
+    {
+      field: "showBodyMetrics",
+      icon: "scale-outline",
+      title: "Medidas e peso",
+      sub: "Último peso e gordura % — sensível, desligado por padrão",
+      value: user.showBodyMetrics,
+    },
+  ];
+
+  return (
+    <View className="gap-2">
+      {items.map((it) => (
+        <Pressable
+          key={it.field}
+          onPress={() => toggle(it.field, !it.value)}
+          disabled={update.isPending}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: it.value, busy: update.isPending }}
+          className="flex-row items-center bg-ink-900 border border-ink-800 rounded-2xl px-4 py-3.5 active:bg-ink-850"
+        >
+          <View className="w-9 h-9 rounded-xl bg-ink-850 border border-ink-800 items-center justify-center mr-3">
+            <Ionicons name={it.icon} size={18} color={colors.chalkMuted} />
+          </View>
+          <View className="flex-1">
+            <Text className="text-chalk font-semibold">{it.title}</Text>
+            <Text className="text-chalk-faint text-xs mt-0.5">{it.sub}</Text>
+          </View>
+          <View
+            className={`w-11 h-7 rounded-full justify-center px-0.5 ${
+              it.value ? "bg-volt" : "bg-ink-700"
+            }`}
+          >
+            <View
+              className={`w-6 h-6 rounded-full ${
+                it.value ? "bg-volt-on self-end" : "bg-chalk-faint self-start"
+              }`}
+            />
+          </View>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+// Privacidade da conta + fila de pedidos de seguidor.
+function SocialPrivacy({
+  user,
+  onChanged,
+}: {
+  user: { isPrivate: boolean };
+  onChanged: () => Promise<void>;
+}) {
+  const update = useUpdateMe();
+  const { data: requests } = useFollowRequests();
+  const pendingCount = requests?.length ?? 0;
+
+  async function togglePrivate() {
+    try {
+      await update.mutateAsync({ isPrivate: !user.isPrivate });
+      await onChanged();
+    } catch {
+      // o toggle simplesmente nao muda se falhar
+    }
+  }
+
+  return (
+    <View className="gap-2">
+      <Pressable
+        onPress={togglePrivate}
+        disabled={update.isPending}
+        accessibilityRole="switch"
+        accessibilityState={{ checked: user.isPrivate, busy: update.isPending }}
+        className="flex-row items-center bg-ink-900 border border-ink-800 rounded-2xl px-4 py-3.5 active:bg-ink-850"
+      >
+        <View className="w-9 h-9 rounded-xl bg-ink-850 border border-ink-800 items-center justify-center mr-3">
+          <Ionicons
+            name={user.isPrivate ? "lock-closed" : "lock-open-outline"}
+            size={18}
+            color={colors.chalkMuted}
+          />
+        </View>
+        <View className="flex-1">
+          <Text className="text-chalk font-semibold">Perfil privado</Text>
+          <Text className="text-chalk-faint text-xs mt-0.5">
+            {user.isPrivate
+              ? "Só seguidores que você aprova veem seus posts"
+              : "Qualquer pessoa pode ver seus posts"}
+          </Text>
+        </View>
+        {/* Toggle visual */}
+        <View
+          className={`w-11 h-7 rounded-full justify-center px-0.5 ${
+            user.isPrivate ? "bg-volt" : "bg-ink-700"
+          }`}
+        >
+          <View
+            className={`w-6 h-6 rounded-full ${
+              user.isPrivate ? "bg-volt-on self-end" : "bg-chalk-faint self-start"
+            }`}
+          />
+        </View>
+      </Pressable>
+
+      {user.isPrivate ? (
+        <Pressable
+          onPress={() => router.push("/social/activity")}
+          accessibilityRole="button"
+          className="flex-row items-center bg-ink-900 border border-ink-800 rounded-2xl px-4 py-3.5 active:bg-ink-850"
+        >
+          <View className="w-9 h-9 rounded-xl bg-ink-850 border border-ink-800 items-center justify-center mr-3">
+            <Ionicons name="heart-outline" size={18} color={colors.chalkMuted} />
+          </View>
+          <View className="flex-1">
+            <Text className="text-chalk font-semibold">Pedidos de seguidor</Text>
+            <Text className="text-chalk-faint text-xs mt-0.5">
+              {pendingCount > 0
+                ? `${pendingCount} esperando aprovação — veja em Atividade`
+                : "Aprovados na aba Atividade"}
+            </Text>
+          </View>
+          {pendingCount > 0 ? (
+            <View className="bg-volt rounded-full min-w-6 h-6 items-center justify-center px-1.5">
+              <Text className="text-volt-on text-xs font-extrabold">{pendingCount}</Text>
+            </View>
+          ) : (
+            <Ionicons name="chevron-forward" size={16} color={colors.chalkFaint} />
+          )}
+        </Pressable>
+      ) : null}
     </View>
   );
 }

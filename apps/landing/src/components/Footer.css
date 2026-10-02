@@ -1,0 +1,36 @@
+.footer {
+  border-top: 1px solid var(--ink-800);
+  padding: 28px 0;
+}
+
+.footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.footer-logo {
+  color: var(--volt);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 3px;
+}
+
+.footer-tag {
+  color: var(--chalk-faint);
+  font-size: 13px;
+}
+
+.footer-note {
+  color: var(--chalk-faint);
+  font-size: 13px;
+}

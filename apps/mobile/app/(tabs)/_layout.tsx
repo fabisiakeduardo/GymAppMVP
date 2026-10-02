@@ -35,6 +35,14 @@ export default function TabsLayout() {
         options={{ title: "Treinar", tabBarIcon: tabIcon("barbell", "barbell-outline") }}
       />
       <Tabs.Screen
+        name="social"
+        options={{ title: "Feed", tabBarIcon: tabIcon("home", "home-outline") }}
+      />
+      <Tabs.Screen
+        name="explorar"
+        options={{ title: "Explorar", tabBarIcon: tabIcon("search", "search-outline") }}
+      />
+      <Tabs.Screen
         name="historico"
         options={{ title: "Histórico", tabBarIcon: tabIcon("time", "time-outline") }}
       />

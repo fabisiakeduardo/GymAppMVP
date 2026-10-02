@@ -32,6 +32,12 @@ export const UpdateMeInput = t.Object({
   birthDate: t.Optional(t.Union([t.String({ format: "date" }), t.Null()])),
   // Avatar: URL http(s) ou data URL (~400KB teto; o app comprime pra ~30KB).
   avatarUrl: t.Optional(t.Union([t.String({ maxLength: 400_000 }), t.Null()])),
+  bio: t.Optional(t.Union([t.String({ maxLength: 160 }), t.Null()])),
+  isPrivate: t.Optional(t.Boolean()),
+  // O que aparece no perfil publico — o dono escolhe.
+  showRoutines: t.Optional(t.Boolean()),
+  showStats: t.Optional(t.Boolean()),
+  showBodyMetrics: t.Optional(t.Boolean()),
 });
 export type UpdateMeInput = Static<typeof UpdateMeInput>;
 
@@ -136,9 +142,61 @@ export const UpdateBodyMetricInput = t.Partial(CreateBodyMetricInput);
 export type UpdateBodyMetricInput = Static<typeof UpdateBodyMetricInput>;
 
 // ---------------------------------------------------------------------------
+// Social
+// ---------------------------------------------------------------------------
+
+// Perfil publico minimo — nunca expoe email.
+export const SocialUser = t.Object({
+  id: t.String(),
+  name: t.String(),
+  avatarUrl: t.Union([t.String(), t.Null()]),
+  bio: t.Union([t.String(), t.Null()]),
+  isPrivate: t.Boolean(),
+});
+export type SocialUser = Static<typeof SocialUser>;
+
+// Post livre: qualquer combinacao de legenda, fotos (data URL), treino do
+// logbook, rotina compartilhavel e medida corporal. Pelo menos um campo
+// precisa vir preenchido (a rota valida).
+export const CreatePostInput = t.Object({
+  caption: t.Optional(t.String({ maxLength: 2000 })),
+  workoutId: t.Optional(t.String()),
+  routineId: t.Optional(t.String()),
+  bodyMetricId: t.Optional(t.String()),
+  mediaUrls: t.Optional(t.Array(t.String({ maxLength: 400_000 }), { maxItems: 4 })),
+});
+export type CreatePostInput = Static<typeof CreatePostInput>;
+
+export const CreateCommentInput = t.Object({
+  body: t.String({ minLength: 1, maxLength: 500 }),
+});
+export type CreateCommentInput = Static<typeof CreateCommentInput>;
+
+export const UserSearchQuery = t.Object({
+  q: t.Optional(t.String({ maxLength: 80 })),
+});
+export type UserSearchQuery = Static<typeof UserSearchQuery>;
+
+// Story: foto (data URL comprimida) + legenda curta opcional. Expira em 24h.
+export const CreateStoryInput = t.Object({
+  mediaUrl: t.String({ minLength: 10, maxLength: 400_000 }),
+  caption: t.Optional(t.String({ maxLength: 200 })),
+});
+export type CreateStoryInput = Static<typeof CreateStoryInput>;
+
+// Registro de Expo push token pra notificacoes push.
+export const PushTokenInput = t.Object({
+  token: t.String({ minLength: 5, maxLength: 200 }),
+  platform: t.Optional(t.String({ maxLength: 20 })),
+});
+export type PushTokenInput = Static<typeof PushTokenInput>;
+
+// ---------------------------------------------------------------------------
 // Pagination
 // ---------------------------------------------------------------------------
 
+// Cuidado: pra QUERY params nao use este schema — Integer aqui (typebox puro)
+// nao coage "1" -> 1. Declare o schema inline com o `t` do elysia na rota.
 export const PaginationQuery = t.Object({
   page: t.Optional(t.Integer({ minimum: 1 })),
   pageSize: t.Optional(t.Integer({ minimum: 1, maximum: 100 })),

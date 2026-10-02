@@ -12,7 +12,9 @@ export { db, client };
 export async function resetDb() {
   await db.execute(sql`
     TRUNCATE workout_sets, workouts, routine_exercises, routines,
-             body_metrics, refresh_tokens RESTART IDENTITY CASCADE;
+             body_metrics, refresh_tokens,
+             post_comments, post_likes, posts, follows, stories,
+             story_views, story_likes, notifications, push_tokens RESTART IDENTITY CASCADE;
   `);
   await db.execute(sql`DELETE FROM exercises WHERE owner_id IS NOT NULL;`);
   await db.execute(sql`DELETE FROM users;`);

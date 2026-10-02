@@ -34,6 +34,18 @@
         {
           "photosPermission": "Escolha uma foto pro seu perfil."
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Tire fotos pros seus stories e posts."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "sounds": []
+        }
       ]
     ],
     "experiments": {

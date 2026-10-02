@@ -9,6 +9,7 @@ import { routineRoutes } from "./routes/routines";
 import { workoutRoutes } from "./routes/workouts";
 import { statsRoutes } from "./routes/stats";
 import { bodyMetricRoutes } from "./routes/body-metrics";
+import { socialRoutes } from "./routes/social";
 
 // Fabrica do app. Recebe o db pra que os testes injetem uma conexao propria.
 export function createApp(db: Database) {
@@ -53,7 +54,8 @@ export function createApp(db: Database) {
     .use(routineRoutes(db))
     .use(workoutRoutes(db))
     .use(statsRoutes(db))
-    .use(bodyMetricRoutes(db));
+    .use(bodyMetricRoutes(db))
+    .use(socialRoutes(db));
 }
 
 export type App = ReturnType<typeof createApp>;

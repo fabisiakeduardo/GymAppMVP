@@ -42,6 +42,7 @@ export default function EditProfile() {
   const { user, refreshMe } = useAuth();
   const update = useUpdateMe();
   const [name, setName] = useState(user?.name ?? "");
+  const [bio, setBio] = useState(user?.bio ?? "");
   const [height, setHeight] = useState(user?.heightCm ? String(user.heightCm) : "");
   const [birth, setBirth] = useState(toBrDate(user?.birthDate ?? null));
   const [rest, setRest] = useState<number>(90);
@@ -105,6 +106,7 @@ export default function EditProfile() {
     try {
       await update.mutateAsync({
         name: name.trim(),
+        bio: bio.trim() || null,
         heightCm: h,
         birthDate: birth.trim() ? iso : null,
         // So manda o avatar se o user mexeu nele.
@@ -163,6 +165,14 @@ export default function EditProfile() {
         />
 
         <Field label="Nome" value={name} onChangeText={setName} placeholder="Seu nome" />
+
+        <Field
+          label="Bio"
+          value={bio}
+          onChangeText={setBio}
+          placeholder="Ex: foco no supino 💪"
+          maxLength={160}
+        />
 
         <View className="flex-row gap-3">
           <View className="flex-1">

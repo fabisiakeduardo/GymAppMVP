@@ -35,6 +35,58 @@ async function userSets(db: Database, userId: string, exerciseId?: string) {
   }));
 }
 
+// Numeros de perfil (estilo Hevy) de QUALQUER usuario — reusado pelo
+// perfil publico social quando o dono ativa `showStats`.
+export async function userProfileStats(db: Database, userId: string) {
+  const ws = await db.query.workouts.findMany({
+    where: eq(workouts.userId, userId),
+    columns: { id: true, startedAt: true },
+  });
+  const sets = await db
+    .select({
+      exerciseId: workoutSets.exerciseId,
+      reps: workoutSets.reps,
+      weight: workoutSets.weight,
+      completed: workoutSets.completed,
+    })
+    .from(workoutSets)
+    .innerJoin(workouts, eq(workoutSets.workoutId, workouts.id))
+    .where(eq(workouts.userId, userId));
+
+  let totalSets = 0;
+  let totalVolumeKg = 0;
+  const byExercise = new Map<string, number>();
+  for (const s of sets) {
+    if (!s.completed) continue;
+    totalSets++;
+    totalVolumeKg += s.weight * s.reps;
+    byExercise.set(s.exerciseId, (byExercise.get(s.exerciseId) ?? 0) + 1);
+  }
+
+  let favoriteExercise: { exerciseId: string; name: string; times: number } | null = null;
+  if (byExercise.size > 0) {
+    const [exerciseId, times] = [...byExercise.entries()].sort((a, b) => b[1] - a[1])[0]!;
+    const ex = await db.query.exercises.findFirst({
+      where: eq(exercises.id, exerciseId),
+      columns: { id: true, name: true },
+    });
+    favoriteExercise = { exerciseId, name: ex?.name ?? "Exercicio", times };
+  }
+
+  const lastWorkout = ws
+    .map((w) => w.startedAt)
+    .sort((a, b) => b.getTime() - a.getTime())[0];
+
+  return {
+    totalWorkouts: ws.length,
+    totalSets,
+    totalVolumeKg: Math.round(totalVolumeKg),
+    weeklyStreak: computeWeeklyStreak(ws.map((w) => w.startedAt)),
+    lastWorkoutAt: lastWorkout ? lastWorkout.toISOString() : null,
+    favoriteExercise,
+  };
+}
+
 export function statsRoutes(db: Database) {
   return new Elysia({ prefix: "/stats" })
     .use(authService(db))
@@ -73,54 +125,6 @@ export function statsRoutes(db: Database) {
     // Numeros do perfil (estilo Hevy): treinos, series, volume, sequencia
     // de semanas e exercicio mais feito.
     .get("/profile", async ({ authUser }) => {
-      const ws = await db.query.workouts.findMany({
-        where: eq(workouts.userId, authUser!.id),
-        columns: { id: true, startedAt: true },
-      });
-      const sets = await db
-        .select({
-          exerciseId: workoutSets.exerciseId,
-          reps: workoutSets.reps,
-          weight: workoutSets.weight,
-          completed: workoutSets.completed,
-        })
-        .from(workoutSets)
-        .innerJoin(workouts, eq(workoutSets.workoutId, workouts.id))
-        .where(eq(workouts.userId, authUser!.id));
-
-      let totalSets = 0;
-      let totalVolumeKg = 0;
-      const byExercise = new Map<string, number>();
-      for (const s of sets) {
-        if (!s.completed) continue;
-        totalSets++;
-        totalVolumeKg += s.weight * s.reps;
-        byExercise.set(s.exerciseId, (byExercise.get(s.exerciseId) ?? 0) + 1);
-      }
-
-      let favoriteExercise: { exerciseId: string; name: string; times: number } | null = null;
-      if (byExercise.size > 0) {
-        const [exerciseId, times] = [...byExercise.entries()].sort((a, b) => b[1] - a[1])[0]!;
-        const ex = await db.query.exercises.findFirst({
-          where: eq(exercises.id, exerciseId),
-          columns: { id: true, name: true },
-        });
-        favoriteExercise = { exerciseId, name: ex?.name ?? "Exercicio", times };
-      }
-
-      const lastWorkout = ws
-        .map((w) => w.startedAt)
-        .sort((a, b) => b.getTime() - a.getTime())[0];
-
-      return {
-        stats: {
-          totalWorkouts: ws.filter((w) => w.id).length,
-          totalSets,
-          totalVolumeKg: Math.round(totalVolumeKg),
-          weeklyStreak: computeWeeklyStreak(ws.map((w) => w.startedAt)),
-          lastWorkoutAt: lastWorkout ? lastWorkout.toISOString() : null,
-          favoriteExercise,
-        },
-      };
+      return { stats: await userProfileStats(db, authUser!.id) };
     });
 }

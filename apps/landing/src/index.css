@@ -1,0 +1,185 @@
+/* Tokens espelhados de apps/mobile/tailwind.config.js — mesma base neutra
+   dark + UMA cor de destaque (volt) reservada pra ação primária / PR. */
+:root {
+  --ink-950: #0a0a0b;
+  --ink-900: #121214;
+  --ink-850: #17171a;
+  --ink-800: #1e1e22;
+  --ink-700: #2b2b31;
+  --ink-600: #3e3e46;
+  --chalk: #fafafa;
+  --chalk-muted: #9a9aa2;
+  --chalk-faint: #63636b;
+  --volt: #d7ff3e;
+  --volt-dim: #b4d62f;
+  --volt-wash: #1f2606;
+  --volt-on: #0a0a0b;
+  --blood: #ff5a5a;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --font: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 96px;
+}
+
+body {
+  margin: 0;
+  background: var(--ink-950);
+  color: var(--chalk);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--volt);
+  color: var(--volt-on);
+}
+
+img,
+svg {
+  display: block;
+}
+
+button {
+  font-family: var(--font);
+  cursor: pointer;
+  border: 0;
+  background: none;
+  color: inherit;
+}
+
+input {
+  font-family: var(--font);
+}
+
+:focus-visible {
+  outline: 2px solid var(--volt);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.container {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ---------- Botões (espelho do Button do app) ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 14px 24px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  transition:
+    transform 160ms var(--ease-out),
+    background-color 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: var(--volt);
+  color: var(--volt-on);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover {
+    background: var(--volt-dim);
+  }
+}
+
+.btn-ghost {
+  background: var(--ink-850);
+  color: var(--chalk);
+  border: 1px solid var(--ink-800);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-ghost:hover {
+    background: var(--ink-800);
+    border-color: var(--ink-700);
+  }
+}
+
+/* ---------- Estrutura de seção ---------- */
+
+.section {
+  padding: clamp(72px, 11vw, 128px) 0;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.h-display {
+  font-size: clamp(40px, 6vw, 64px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+}
+
+.h-section {
+  font-size: clamp(30px, 4vw, 44px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+}
+
+.lede {
+  font-size: clamp(16px, 1.6vw, 18px);
+  color: var(--chalk-muted);
+  max-width: 56ch;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- Estados ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

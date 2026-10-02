@@ -32,6 +32,7 @@ gráfico e % gordura, medidas corporais e descanso padrão do cronômetro.
 apps/
   mobile/   # Expo app (expo-router + NativeWind)
   api/      # Elysia + Bun (auth, rotas, validação)
+  landing/  # Landing page (Vite + React, mesma base de tokens)
 packages/
   db/       # Drizzle schema, migrations, seed de exercícios (pt-BR)
   shared/   # schemas TypeBox + lógica de PR/progressão (fonte única)
@@ -88,6 +89,7 @@ pelo IP da sua máquina).
 |---------|-----------|
 | `bun run dev:api` | Backend com hot reload |
 | `bun run dev:mobile` | Expo dev server |
+| `bun run dev:landing` | Landing page em `http://localhost:5173` |
 | `bun run db:generate` | Gera migration a partir do schema Drizzle |
 | `bun run db:migrate` | Aplica migrations |
 | `bun run db:seed` | Semeia exercícios globais |

@@ -1,0 +1,129 @@
+.waitlist {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  max-width: 460px;
+}
+
+.waitlist-field {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.waitlist-icon {
+  position: absolute;
+  left: 16px;
+  color: var(--chalk-faint);
+  pointer-events: none;
+}
+
+.waitlist input {
+  width: 100%;
+  min-height: 52px;
+  padding: 14px 16px 14px 44px;
+  border-radius: 14px;
+  border: 1px solid var(--ink-700);
+  background: var(--ink-900);
+  color: var(--chalk);
+  font-size: 16px;
+  font-weight: 500;
+  outline: none;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.waitlist input::placeholder {
+  color: var(--chalk-faint);
+}
+
+.waitlist input:focus-visible {
+  outline: none;
+  border-color: var(--volt);
+}
+
+.waitlist-btn {
+  min-height: 52px;
+  white-space: nowrap;
+}
+
+.waitlist-note {
+  position: absolute;
+  left: 4px;
+  bottom: -26px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* sobre fundo escuro */
+.waitlist--dark .waitlist-btn {
+  background: var(--volt);
+  color: var(--volt-on);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .waitlist--dark .waitlist-btn:hover:not(:disabled) {
+    background: var(--volt-dim);
+  }
+}
+
+.waitlist--dark .waitlist-btn:disabled {
+  background: var(--volt-wash);
+  color: var(--volt);
+}
+
+.waitlist--dark .waitlist-note {
+  color: var(--blood);
+}
+.waitlist--dark .waitlist-btn:disabled ~ .waitlist-note {
+  color: var(--volt-dim);
+}
+
+/* sobre o cartao volt */
+.waitlist--volt input {
+  background: rgba(10, 10, 11, 0.14);
+  border-color: rgba(10, 10, 11, 0.35);
+  color: var(--volt-on);
+}
+
+.waitlist--volt input::placeholder {
+  color: rgba(10, 10, 11, 0.55);
+}
+
+.waitlist--volt .waitlist-icon {
+  color: rgba(10, 10, 11, 0.55);
+}
+
+.waitlist--volt input:focus-visible {
+  border-color: var(--volt-on);
+}
+
+.waitlist--volt .waitlist-btn {
+  background: var(--volt-on);
+  color: var(--volt);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .waitlist--volt .waitlist-btn:hover:not(:disabled) {
+    background: #000;
+  }
+}
+
+.waitlist--volt .waitlist-btn:disabled {
+  background: rgba(10, 10, 11, 0.25);
+  color: var(--volt-on);
+}
+
+.waitlist--volt .waitlist-note {
+  color: var(--volt-on);
+  font-weight: 700;
+}
+
+@media (max-width: 560px) {
+  .waitlist {
+    flex-direction: column;
+  }
+}

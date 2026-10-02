@@ -3,6 +3,10 @@
 // base neutra + UMA cor de destaque (volt) reservada pra acao primaria.
 module.exports = {
   content: ["./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  // O preset do NativeWind usa darkMode 'media' por default — na web o
+  // css-interop chama colorScheme.set() ao injetar a stylesheet e crasha.
+  // O app e dark-only e nao usa variantes dark:, entao 'class' e seguro.
+  darkMode: "class",
   presets: [require("nativewind/preset")],
   theme: {
     extend: {

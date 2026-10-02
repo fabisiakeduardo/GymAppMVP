@@ -1,0 +1,50 @@
+.cta-card {
+  background: var(--volt);
+  color: var(--volt-on);
+  border-radius: 28px;
+  padding: clamp(48px, 7vw, 88px) clamp(24px, 6vw, 80px);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cta-icon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: var(--volt-on);
+  color: var(--volt);
+  transform: rotate(-6deg);
+  margin-bottom: 28px;
+}
+
+.cta-title {
+  font-size: clamp(32px, 4.6vw, 52px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+  max-width: 18ch;
+}
+
+.cta-sub {
+  margin-top: 16px;
+  font-size: 16px;
+  font-weight: 500;
+  max-width: 46ch;
+  color: rgba(10, 10, 11, 0.75);
+}
+
+.cta-form {
+  margin-top: 36px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.cta-form .waitlist {
+  margin: 0 auto;
+  width: min(460px, 100%);
+}
